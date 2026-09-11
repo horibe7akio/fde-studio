@@ -1,0 +1,72 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+# Only the newest run per branch matters.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: build & check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: install
+        run: npm ci
+
+      - name: build
+        run: npm run build
+
+      - name: すべてのページが出力されているか
+        run: |
+          missing=0
+          for page in index.html tasks.html field.html; do
+            if [ -f "dist/$page" ]; then
+              echo "ok       dist/$page"
+            else
+              echo "MISSING  dist/$page"
+              missing=1
+            fi
+          done
+          exit $missing
+
+      - name: 配信物の重さ
+        run: |
+          echo "dist 合計: $(du -sh dist | cut -f1)"
+          find dist -type f -size +3M -printf '%s\t%p\n' 2>/dev/null \
+            | sort -rn | awk '{printf "%.1fMB\t%s\n", $1/1048576, $2}'
+
+      - name: 個人環境の情報が混ざっていないか
+        run: |
+          # Anything that only works on one person's machine must not ship.
+          # This file is skipped: it holds the search pattern itself, so it always matches.
+          hits=$(git ls-files \
+            | grep -vE '\.(png|jpe?g|webp|gif|m4a|mp3|mp4|woff2?|ico)$' \
+            | grep -v '^.github/workflows/ci.yml$' \
+            | xargs grep -nE '/Users/|/Volumes/|~/Downloads' 2>/dev/null || true)
+          if [ -n "$hits" ]; then
+            echo "$hits"
+            echo "---"
+            echo "個人のパスが含まれています。渡す物には書かないでください。"
+            exit 1
+          fi
+          echo "ok  個人のパスなし"
+
+      - name: 成果物を残す
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist-${{ github.sha }}
+          path: dist
+          retention-days: 14
