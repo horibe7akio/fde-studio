@@ -1,0 +1,127 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#03080b">
+<meta name="description" content="FDEは具体的に何をするのか。現場を知る・業務を整理する・仕組みにする・使われるまで改善する。4つの工程と20の作業で読む。">
+<link rel="icon" href="./favicon.svg">
+<title>FDEの作業 — 4工程 / 20の作業</title>
+</head>
+<body>
+<a href="#overview" class="skip-link">本文へ移動</a>
+
+<header class="bar">
+  <a class="brand" href="#top"><span class="brand-symbol">⌘</span> FDE<span class="brand-sub">TASK VIEW</span></a>
+  <div class="bar-tools">
+    <span class="edition">4 STAGES / 20 TASKS</span>
+    <a class="switch" href="./index.html">3D版へ ↗</a>
+  </div>
+</header>
+
+<nav class="rail" aria-label="工程の進み">
+  <a href="#s1" data-rail="1"><b>01</b><span>現場を知る</span><i></i></a>
+  <a href="#s2" data-rail="2"><b>02</b><span>業務を整理する</span><i></i></a>
+  <a href="#s3" data-rail="3"><b>03</b><span>仕組みにする</span><i></i></a>
+  <a href="#s4" data-rail="4"><b>04</b><span>使われるまで改善する</span><i></i></a>
+  <p class="rail-total"><span id="rail-n">1</span><i>/</i>20</p>
+</nav>
+
+<main id="top">
+
+<section class="hero" id="overview">
+  <div class="hero-copy">
+    <p class="eyebrow">FDE / Forward Deployed Engineer</p>
+    <h1>FDEは、<em>具体的に何をするのか。</em></h1>
+    <p class="lead">FDEの仕事は、現場の要望を聞いて終わることではない。現場の仕事を観察し、業務を分解し、使われる仕組みに変え、現場で使われるまで改善する。</p>
+    <ol class="flow">
+      <li><b>01</b><span>現場を知る</span><small>実際の仕事の流れ・詰まり・判断を観察する</small></li>
+      <li><b>02</b><span>業務を整理する</span><small>データ・判断・担当・例外に分けて設計図にする</small></li>
+      <li><b>03</b><span>仕組みにする</span><small>自動化する範囲と人が判断する範囲を決めて、小さく作る</small></li>
+      <li><b>04</b><span>使われるまで改善する</span><small>導入後の利用状況と効果を見て、仕組みを育てる</small></li>
+    </ol>
+    <p class="micro">オレンジの人物がFDE。水色は、一緒に働く業務担当者。</p>
+  </div>
+  <figure class="hero-figure">
+    <img src="./img/00-overview-overview-infographic.webp" width="1400" height="788" alt="FDEの全体像。現場を知る、業務を整理する、仕組みにする、使われるまで改善するの4工程が左から右へ並ぶ図解。">
+  </figure>
+</section>
+
+<section class="stage" id="s1" data-stage="1" style="--scene:url(./img/01-understand-the-field-scene.webp)">
+  <div class="stage-grid">
+    <div class="stage-visual">
+      <figure><img src="./img/01-understand-the-field-infographic.webp" width="1400" height="788" loading="lazy" alt="現場を知る。まず、仕事の流れをたどる。要望を聞くだけでなく、実際の業務を観察する様子の図解。"></figure>
+      <p class="stage-count"><span class="cur">1</span> <i>/</i> 5 <em>の作業</em></p>
+    </div>
+    <ol class="tasks" aria-label="現場を知るの作業">
+      <li class="tasks-head"><p class="stage-eyebrow"><b>01</b> 現場を知る</p></li>
+      <li class="task"><span class="tno">01</span><p>要望を聞くだけでなく、実際の業務を観察する</p></li>
+      <li class="task"><span class="tno">02</span><p>何をきっかけに仕事が始まるかを見る</p></li>
+      <li class="task"><span class="tno">03</span><p>どのデータを参照しているかを確認する</p></li>
+      <li class="task"><span class="tno">04</span><p>どこで仕事が止まり、手戻りが生まれるかを特定する</p></li>
+      <li class="task"><span class="tno">05</span><p>誰が判断し、誰に引き継がれるかを把握する</p></li>
+    </ol>
+  </div>
+</section>
+
+<section class="stage" id="s2" data-stage="2" style="--scene:url(./img/02-structure-the-work-scene.webp)">
+  <div class="stage-grid">
+    <div class="stage-visual">
+      <figure><img src="./img/02-structure-the-work-infographic.webp" width="1400" height="788" loading="lazy" alt="業務を整理する。複雑な仕事をデータ・判断・担当に分けて設計図にする図解。"></figure>
+      <p class="stage-count"><span class="cur">1</span> <i>/</i> 5 <em>の作業</em></p>
+    </div>
+    <ol class="tasks" aria-label="業務を整理するの作業">
+      <li class="tasks-head"><p class="stage-eyebrow"><b>02</b> 業務を整理する</p></li>
+      <li class="task"><span class="tno">06</span><p>複雑な仕事を、システムの設計図に変える</p></li>
+      <li class="task"><span class="tno">07</span><p><b>データ</b>：何を入力し、何を参照し、何を記録するか</p></li>
+      <li class="task"><span class="tno">08</span><p><b>判断</b>：どの条件で分岐し、どこに例外があるか</p></li>
+      <li class="task"><span class="tno">09</span><p><b>担当</b>：誰が引き受け、誰が承認し、誰が最終判断するか</p></li>
+      <li class="task"><span class="tno">10</span><p>例外処理を後回しにせず、業務の現実として扱う</p></li>
+    </ol>
+  </div>
+</section>
+
+<section class="stage" id="s3" data-stage="3" style="--scene:url(./img/03-build-the-system-scene.webp)">
+  <div class="stage-grid">
+    <div class="stage-visual">
+      <figure><img src="./img/03-build-the-system-infographic.webp" width="1400" height="788" loading="lazy" alt="仕組みにする。自動で進む仕事と人が決める仕事を分けて、小さく作る図解。"></figure>
+      <p class="stage-count"><span class="cur">1</span> <i>/</i> 5 <em>の作業</em></p>
+    </div>
+    <ol class="tasks" aria-label="仕組みにするの作業">
+      <li class="tasks-head"><p class="stage-eyebrow"><b>03</b> 仕組みにする</p></li>
+      <li class="task"><span class="tno">11</span><p>自動で進む仕事と、人が決める仕事を分ける</p></li>
+      <li class="task"><span class="tno">12</span><p>小さく作り、実際の現場で確かめる</p></li>
+      <li class="task"><span class="tno">13</span><p>どこまで自動化し、どこから人が確認するかを決める</p></li>
+      <li class="task"><span class="tno">14</span><p>例外が起きたときに、誰が確認するかを設計する</p></li>
+      <li class="task"><span class="tno">15</span><p>履歴を残し、既存システムやデータとつなぐ</p></li>
+    </ol>
+  </div>
+</section>
+
+<section class="stage" id="s4" data-stage="4" style="--scene:url(./img/04-adopt-and-improve-scene.webp)">
+  <div class="stage-grid">
+    <div class="stage-visual">
+      <figure><img src="./img/04-adopt-and-improve-infographic.webp" width="1400" height="788" loading="lazy" alt="使われるまで改善する。導入後の利用状況と効果を見て、仕組みを育てる図解。"></figure>
+      <p class="stage-count"><span class="cur">1</span> <i>/</i> 5 <em>の作業</em></p>
+    </div>
+    <ol class="tasks" aria-label="使われるまで改善するの作業">
+      <li class="tasks-head"><p class="stage-eyebrow"><b>04</b> 使われるまで改善する</p></li>
+      <li class="task"><span class="tno">16</span><p>導入して終わりにしない</p></li>
+      <li class="task"><span class="tno">17</span><p>実際に現場で使われているかを確認する</p></li>
+      <li class="task"><span class="tno">18</span><p>作業時間・手戻り・判断の質など、効果を見る</p></li>
+      <li class="task"><span class="tno">19</span><p>困る箇所や使われない箇所を見つける</p></li>
+      <li class="task"><span class="tno">20</span><p>現場のフィードバックを次の改善に戻す</p></li>
+    </ol>
+  </div>
+</section>
+
+<section class="outro">
+  <h2>4つの工程は、一度きりではない。</h2>
+  <p>使われ方を見て、また現場に戻る。</p>
+  <div class="outro-links"><a class="switch big" href="./index.html">3Dの解説版を見る ↗</a><a class="switch" href="./index.html#sources">出典を見る ↗</a></div>
+</section>
+
+</main>
+<script type="module" src="/src/tasks.js"></script>
+</body>
+</html>
