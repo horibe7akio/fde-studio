@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#03080b">
+<meta name="description" content="なぜFDEは現場に深く入り込むのか。仕様書・現場・デモ・基幹システム・時間を、形を変える立方体の群れで見る3D解説。">
+<link rel="icon" href="./favicon.svg">
+<title>なぜ現場に、深く入り込むのか — FDE</title>
+</head>
+<body>
+<a href="#b1" class="skip-link">本文へ移動</a>
+
+<header class="bar">
+  <a class="brand" href="#top"><span class="brand-symbol">⌘</span> FDE<span class="brand-sub">WHY THE FIELD</span></a>
+  <div class="bar-tools">
+    <a class="switch" href="./index.html">概念の3D版 ↗</a>
+    <a class="switch" href="./tasks.html">作業で見る ↗</a>
+  </div>
+</header>
+
+<canvas id="stage" aria-label="仕様書から現場、基幹システム、時間へと形を変える立方体の3D図解"></canvas>
+<div class="vignette" aria-hidden="true"></div>
+<p class="hint" aria-hidden="true">スクロール</p>
+
+<main id="top">
+
+<section class="beat lead-in" id="b1">
+  <div class="copy">
+  <p class="eyebrow">FDE / なぜ現場に入るのか</p>
+  <h1>仕様書は、<em>きれいに書ける。</em></h1>
+  <p class="sub">整った行に、整った言葉で。<br>読めば分かる形になっている。</p>
+  </div>
+</section>
+
+<section class="beat" id="b2">
+  <div class="copy">
+  <p class="no">02</p>
+  <h2>現場は、<em>そう書かれていない。</em></h2>
+  <p class="sub">メールで届く注文。Excelへの転記。<br>担当者しか知らない、例外の扱い。</p>
+  <p class="note">仕事は11の島に散らばり、どこか1か所で必ず止まる。<br>止まっている場所は、仕様書には書かれていない。</p>
+  </div>
+</section>
+
+<section class="beat" id="b3">
+  <div class="copy">
+  <p class="no">03</p>
+  <h2>デモは動く。<em>業務は動かない。</em></h2>
+  <p class="sub">中央のひとつだけが光り、<br>まわりの仕事は暗いまま止まっている。</p>
+  <p class="note">生成AIの試みのうち、損益に効果が現れたものは<b>5%</b>だった。<span class="src">MIT Project NANDA『The GenAI Divide』2025。経営者52人の聞き取りほか。約6か月時点で損益に現れなかった、という調査。</span></p>
+  </div>
+</section>
+
+<section class="beat" id="b4">
+  <div class="copy">
+  <p class="no">04</p>
+  <h2>仕事の大半は、<em>15年物のシステムへの読み書き</em>だった。</h2>
+  <p class="sub">床の下に、古い基幹システムが積まれている。<br>そこへ配線を通すことが、仕事の本体だった。</p>
+  <p class="note">しかも、それが分かるのは<b>予算が決まった後</b>。<span class="src">Hatchworks「Forward Deployed Engineer」より。</span></p>
+  </div>
+</section>
+
+<section class="beat" id="b5">
+  <div class="copy">
+  <p class="no">05</p>
+  <h2>複雑な組織の中の複雑なソフトウェアは、<em>リモートでは導入できない。</em></h2>
+  <p class="sub">散らばっていた仕事が、1本の道につながる。<br>この道は、中に入らないと見えない。</p>
+  <p class="note">Googleが自社のFDE組織の発表で述べた言葉。<span class="src">堀新一郎「FDEの時代 #1」経由で確認。原文はGoogleの発表。</span></p>
+  </div>
+</section>
+
+<section class="beat" id="b6">
+  <div class="copy">
+  <p class="no">06</p>
+  <h2>土台ができても、<em>すぐには使われない。</em></h2>
+  <p class="sub">短い水色が、作る時間。<br>長いオレンジが、信頼されるまでの時間。</p>
+  <p class="note">技術的な土台よりも、現場が信頼して使い始めるまでの方に、ずっと時間がかかる。<span class="src">OpenAIのFDEがMorgan Stanleyの事例として語った内容（講演の聞き書き＝二次情報のため、具体的な期間は載せていない）。</span></p>
+  </div>
+</section>
+
+<section class="beat" id="b7">
+  <div class="copy">
+  <p class="no">07</p>
+  <h2>だから、<em>現場に入る。</em></h2>
+  <p class="sub">止まっていた場所は、もう赤くない。<br>島は、つながったまま動いている。</p>
+  <p class="next">
+    <span>次にやることは、その現場を整理すること。</span>
+    <a class="switch big" href="./tasks.html#s2">業務を整理する ↗</a>
+  </p>
+  </div>
+</section>
+
+<footer class="foot">
+  <p class="foot-head">このページで使った根拠</p>
+  <ul>
+    <li>MIT Project NANDA『The GenAI Divide: State of AI in Business 2025』（経営者52人の聞き取り、153人の調査、公開事例300件超。約6か月時点で損益に効果が現れたのは5%）</li>
+    <li>Hatchworks「Forward Deployed Engineer」（15年物の基幹システムへの読み書きが仕事の大半で、予算確定後に判明した、との記述）</li>
+    <li>Google（複雑な組織の中の複雑なソフトウェアはリモートでは導入できない、という発表時の言葉）</li>
+    <li>OpenAI FDEによるMorgan Stanley事例の講演（聞き書きのため、期間の数値は本文に載せていない）</li>
+  </ul>
+  <p class="foot-note">02の情景は、この解説シリーズの第1章で使っている記述に合わせている。数値は、定義と母数を確認できたものだけを本文に出している。</p>
+  <p class="foot-links"><a href="./index.html">概念の3D版</a> ・ <a href="./tasks.html">FDEの作業で見る</a></p>
+</footer>
+
+</main>
+<script type="module" src="/src/field.js"></script>
+</body>
+</html>
