@@ -1,5 +1,6 @@
 import './field.css';
 import * as T from 'three';
+import { createGrade, createPerson, CYAN, AMBER } from './lib/look.js';
 import Lenis from 'lenis';
 import 'lenis/dist/lenis.css';
 
@@ -13,10 +14,14 @@ const beats = [...document.querySelectorAll('.beat')];
 
 const renderer = new T.WebGLRenderer({ canvas, antialias: true });
 renderer.setPixelRatio(Math.min(devicePixelRatio, 1.75));
+renderer.toneMapping = T.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.12;
 const scene = new T.Scene();
 scene.background = new T.Color('#03080b');
 scene.fog = new T.FogExp2('#03080b', 0.03);
 const camera = new T.PerspectiveCamera(44, 1, 0.1, 200);
+// Same post chain as the concept page, so the two read as one product.
+const view = createGrade(renderer, scene, camera, { bloom: [0.52, 0.5, 0.62], grain: 0.05 });
 
 scene.add(new T.HemisphereLight('#a6dcff', '#06121a', 0.8));
 const key = new T.DirectionalLight('#d8f2ff', 1.05);
@@ -112,6 +117,11 @@ function desk(f, base, cx, cz, opts) {
     P(face, 0.72, 0.46, 0.20, 0.20, 0.20, head);
     P(0, 0.16, 0.62, 0.26, 0.30, 0.06, INK);
     P(0, 0.001, 0.60, ...HIDE, INK);
+  } else if (OPT.person === 'real') {                  // 実体の人を使うので、席は小物だけ
+    P(0, 0.16, 0.62, 0.26, 0.30, 0.06, INK);          // 椅子
+    P(0.02, 0.35, 0.16, 0.30, 0.02, 0.12, INK);       // キーボード
+    P(-0.42, 0.36, 0.06, 0.10, 0.10, 0.10, SHELF);    // マグ
+    P(0.60, 0.22, -0.30, 0.22, 0.40, 0.30, SHELF);    // 書類棚
   } else {                                             // a：いまの形
     P(face, 0.32, 0.46, 0.26, 0.38, 0.20, TORSO);
     P(face, 0.62, 0.46, 0.19, 0.19, 0.19, head);
@@ -225,6 +235,24 @@ function buildAll() {
 }
 buildAll();
 
+/* ---- the people at those desks ----------------------------------------- */
+// The cubes are the work. The people are people — the same figure the concept page uses.
+const crowd = new T.Group();
+scene.add(crowd);
+const folks = ISLANDS.map(([cx, cz], n) => {
+  const p = createPerson(n === STALLED ? 0xff637f : CYAN, 0.52);
+  p.group.position.set(cx + 0.06, 0, cz + 0.78);
+  p.group.rotation.y = Math.PI;                    // face the desk
+  p.group.scale.setScalar(0.001);
+  crowd.add(p.group);
+  return p;
+});
+const fdeFigure = createPerson(AMBER, 0.58);
+fdeFigure.group.position.set(ISLANDS[STALLED][0] - 0.85, 0, ISLANDS[STALLED][1] + 0.7);
+fdeFigure.group.rotation.y = Math.PI * 0.72;
+fdeFigure.group.scale.setScalar(0.001);
+crowd.add(fdeFigure.group);
+
 /* ---- work arriving from outside ---------------------------------------- */
 // Orders do not arrive on a beat. Each one has its own speed and its own start.
 const msgSpeed = Array.from({ length: MSG }, (_, k) => 0.07 + ((k * 37) % 11) * 0.012);
@@ -256,7 +284,7 @@ function messageAt(k, time) {
 /* ---- camera per beat --------------------------------------------------- */
 const POSE = [
   { p: [0, 7.0, 6.4], l: [0, 1.35, 0] },
-  { p: [0.4, 0.95, 3.15], l: [-0.25, 0.5, 1.3] },
+  { p: [0.45, 1.35, 4.35], l: [-0.3, 0.55, 1.15] },
   { p: [0, 2.1, 5.6], l: [0, 1.3, 0] },
   { p: [3.4, -0.25, 6.6], l: [0.2, -1.25, 0] },
   { p: [0.3, 2.4, 7.0], l: [0, 0.1, 0.2] },
@@ -362,6 +390,7 @@ function resize() {
   const w = canvas.clientWidth, h = canvas.clientHeight;
   if (!w || !h) return;
   renderer.setSize(w, h, false);
+  view.setSize(w, h);
   camera.aspect = w / h;
   camera.fov = w < 760 ? 58 : 44;
   camera.updateProjectionMatrix();
@@ -382,7 +411,23 @@ function frame(now) {
   camera.position.copy(camPos);
   camera.lookAt(camLook);
   morph(u, now / 1000);
-  renderer.render(scene, camera);
+
+  // People belong to the field beats only, and the FDE only turns up at the end.
+  const here = fieldWeight(u);
+  const solid = OPT.person === 'real' ? 1 : 0;
+  const t = now / 1000;
+  folks.forEach((p, n) => {
+    const s0 = 0.52 * here * solid;
+    p.group.scale.setScalar(Math.max(s0, 0.001));
+    p.left.rotation.z = -0.25 + Math.sin(t * 1.6 + n) * 0.06 * here;
+    p.right.rotation.z = 0.25 - Math.sin(t * 1.5 + n * 1.3) * 0.06 * here;
+    p.halo.material.opacity = 0.55 * here * solid;
+  });
+  const arrived = T.MathUtils.smoothstep(u, 5.7, 6.0);
+  fdeFigure.group.scale.setScalar(Math.max(0.58 * arrived, 0.001));
+  fdeFigure.halo.material.opacity = 0.8 * arrived;
+
+  view.render(t, here * 0.05);
 }
 resize();
 requestAnimationFrame(frame);
