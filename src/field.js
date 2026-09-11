@@ -54,6 +54,90 @@ const put = (f, i, x, y, z, sx, sy, sz, col) => {
   f.c[i * 3] = c.r; f.c[i * 3 + 1] = c.g; f.c[i * 3 + 2] = c.b;
 };
 
+// 22 cubes are the work that arrives from outside. The other 242 are eleven desks.
+const MSG = 22;
+const PER = 22;
+// Spread out enough that one desk can be read on its own.
+const ISLANDS = [
+  [-5.1, -2.6], [-2.5, -4.0], [0.5, -2.5], [3.3, -3.9], [5.3, -1.4], [-4.3, 0.9],
+  [-1.2, 2.3], [2.0, 1.2], [4.8, 3.1], [-3.1, 4.2], [1.1, 5.0],
+];
+const STALLED = 7;   // the desk where the work is waiting on a confirmation
+const ALONE = 8;     // one person doing all of it; the second chair is empty
+// The two desks the camera actually looks at; arriving work lands on these.
+const MSG_TARGETS = [STALLED, 6];
+
+const INK = '#0d3044', SCREEN = '#63dcff', SKIN = '#d6f2ff', TORSO = '#2a79a4';
+const PAPER = '#eef7fb', PHONE = '#1b4a60', SHELF = '#0c2a3a';
+const RED = '#ff5f8a', RED_SOFT = '#ff9ab5', WARM = '#ffb066';
+
+// One desk with a person at it. `flat` presses the whole thing to the floor.
+function desk(f, base, cx, cz, opts) {
+  const { stalled = false, alone = false, papers = 3, flat = 0, calm = false } = opts;
+  const y = (v) => (flat ? 0.02 + v * 0.12 : v);
+  const h = (v) => (flat ? v * 0.18 : v);
+  const dim = (col) => (flat ? '#0c2330' : col);
+  let i = base;
+  const P = (x, yy, z, sx, sy, sz, col) => put(f, i++, cx + x, y(yy), cz + z, sx, h(sy), sz, dim(col));
+
+  P(0, 0.30, 0, 0.92, 0.05, 0.50, INK);                       // 天板
+  P(0, 0.15, -0.02, 0.70, 0.28, 0.06, INK);                   // 脚
+  P(-0.20, 0.55, -0.14, 0.46, 0.34, 0.04, SCREEN);          // 画面
+  P(-0.20, 0.36, -0.13, 0.09, 0.09, 0.09, INK);               // 画面の台
+
+  // The person. A stalled desk turns away from the screen, toward the phone.
+  const face = stalled ? 0.16 : -0.04;
+  if (alone) {
+    P(0, 0.16, 0.60, 0.28, 0.30, 0.06, INK);                  // 空いた椅子
+    P(0, 0.001, 0.60, 0.001, 0.001, 0.001, INK);
+    P(0, 0.001, 0.60, 0.001, 0.001, 0.001, INK);
+  } else {
+    P(face, 0.32, 0.46, 0.26, 0.38, 0.20, TORSO);             // 胴
+    P(face, 0.62, 0.46, 0.19, 0.19, 0.19, stalled ? RED : SKIN); // 頭
+    P(0, 0.16, 0.60, 0.26, 0.30, 0.06, INK);                  // 椅子
+  }
+
+  for (let k = 0; k < 4; k++) {                                // 書類の山
+    const on = k < papers;
+    P(0.34, 0.34 + k * 0.04, -0.06, on ? 0.26 : 0.001, on ? 0.03 : 0.001, on ? 0.20 : 0.001,
+      stalled ? RED_SOFT : PAPER);
+  }
+  P(0.41, 0.37, 0.20, 0.13, 0.07, 0.17, stalled ? RED : PHONE); // 電話
+
+  for (let k = 0; k < 3; k++) {                                // 棚
+    P(-0.66, 0.14 + k * 0.16, -0.68, 0.22, 0.13, 0.16, SHELF);
+  }
+  for (let k = 0; k < 7; k++) {                                // 周辺
+    const j = jitter[(base + k) % N];
+    P((j[0] - 0.5) * 1.9, 0.03, (j[2] - 0.5) * 1.9, 0.08, 0.03, 0.08, '#0a2231');
+  }
+  return i;
+}
+
+function field(f, { flat = 0, healed = false } = {}) {
+  for (let k = 0; k < MSG; k++) {                              // 届いたもの＝机の上の紙
+    const isl = MSG_TARGETS[k % MSG_TARGETS.length], [cx, cz] = ISLANDS[isl], j = jitter[k];
+    put(f, k, cx + 0.3 + (j[0] - 0.5) * 0.3, flat ? 0.02 : 0.40 + j[1] * 0.05, cz - 0.1 + (j[2] - 0.5) * 0.3,
+      0.2, flat ? 0.01 : 0.03, 0.15, flat ? '#0c2330' : (k % 3 === 0 ? '#5fd8ff' : PAPER));
+  }
+  let i = MSG;
+  ISLANDS.forEach(([cx, cz], n) => {
+    i = desk(f, i, cx, cz, {
+      stalled: !healed && n === STALLED,
+      alone: n === ALONE,
+      papers: [3, 4, 2, 4, 1, 2, 3, 4, 2, 1, 2][n],
+      flat,
+      calm: healed,
+    });
+  });
+  // The FDE arrives and stands next to the desk that was stuck.
+  if (healed) {
+    const [sx, sz] = ISLANDS[STALLED];
+    put(f, MSG + STALLED * PER + 4, sx - 0.55, 0.30, sz + 0.5, 0.22, 0.34, 0.18, WARM);
+    put(f, MSG + STALLED * PER + 5, sx - 0.55, 0.57, sz + 0.5, 0.16, 0.16, 0.16, WARM);
+  }
+}
+
 // 1. the spec: tidy rows of type on a flat sheet
 {
   const f = blank(), COLS = 22, ROWS = 12;
@@ -67,35 +151,17 @@ const put = (f, i, x, y, z, sx, sy, sz, col) => {
   F.push(f);
 }
 
-// 2. the field: eleven islands of work, one of them stalled
-const ISLANDS = [
-  [-3.3, -1.7], [-1.6, -2.6], [0.3, -1.6], [2.1, -2.5], [3.4, -0.9], [-2.8, 0.6],
-  [-0.8, 1.5], [1.3, 0.8], [3.1, 2.0], [-2.0, 2.7], [0.7, 3.2],
-];
-const STALLED = 7;
-{
-  const f = blank(), per = N / ISLANDS.length;
-  for (let i = 0; i < N; i++) {
-    const isl = (i / per) | 0, j = jitter[i];
-    const [cx, cz] = ISLANDS[Math.min(isl, ISLANDS.length - 1)];
-    put(f, i,
-      cx + (j[0] - 0.5) * 1.05, 0.09 + j[1] * 0.52, cz + (j[2] - 0.5) * 1.05,
-      0.15, 0.13, 0.15, isl === STALLED ? '#ff5f8a' : (i % 9 === 0 ? '#8fe6ff' : '#1d5570'));
-  }
-  F.push(f);
-}
+// 2. the field: eleven desks, people at them, work arriving from outside
+{ const f = blank(); field(f); F.push(f); }
 
-// 3. the demo: a bright block in the middle, the rest gone flat and dark
+// 3. the demo: a bright block in the middle, the work pressed flat and dark
 {
-  const f = blank(), SHELL = 76;
-  for (let i = 0; i < N; i++) {
-    if (i < SHELL) {
-      const a = (i / SHELL) * Math.PI * 2, r = 0.62 + (i % 3) * 0.09;
-      put(f, i, Math.cos(a) * r, 1.55 + ((i % 4) - 1.5) * 0.3, Math.sin(a) * r, 0.2, 0.2, 0.2, '#7fe6ff');
-    } else {
-      const j = jitter[i];
-      put(f, i, (j[0] - 0.5) * 13, 0.015, (j[2] - 0.5) * 11, 0.17, 0.02, 0.17, '#0e2937');
-    }
+  const f = blank();
+  field(f, { flat: 1 });
+  const SHELL = 40;
+  for (let i = 0; i < SHELL; i++) {
+    const a = (i / SHELL) * Math.PI * 2, r = 0.62 + (i % 3) * 0.09;
+    put(f, i + 60, Math.cos(a) * r, 1.55 + ((i % 4) - 1.5) * 0.3, Math.sin(a) * r, 0.2, 0.2, 0.2, '#7fe6ff');
   }
   F.push(f);
 }
@@ -107,7 +173,7 @@ const STALLED = 7;
   for (let i = 0; i < N; i++) {
     if (i < PIPED) {
       const p = (i / PER_PIPE) | 0, k = i % PER_PIPE;
-      put(f, i, px[p], -1.15 + k * 0.2, pz[p], 0.09, 0.14, 0.09, '#ffb066');
+      put(f, i, px[p], -1.15 + k * 0.2, pz[p], 0.09, 0.14, 0.09, WARM);
     } else {
       const k = i - PIPED, layer = (k / 56) | 0, m = k % 56;
       put(f, i, -3.5 + (m % 14) * 0.54, -1.15 - layer * 0.36, -1.35 + ((m / 14) | 0) * 0.92,
@@ -142,28 +208,47 @@ const STALLED = 7;
     const inBuild = i < BUILD;
     const x = inBuild ? x0 + (i / BUILD) * 1.3 : x0 + 1.62 + ((i - BUILD) / (N - BUILD)) * 3.9;
     put(f, i, x, inBuild ? 1.34 : 1.0, 0.9 + ((i % 3) - 1) * 0.13,
-      0.03, inBuild ? 0.5 : 0.3, 0.3, inBuild ? '#5fd8ff' : '#ffb066');
+      0.03, inBuild ? 0.5 : 0.3, 0.3, inBuild ? '#5fd8ff' : WARM);
   }
   F.push(f);
 }
 
-// 7. back into the field — now connected, and the stall is gone
-{
-  const f = blank(), per = N / ISLANDS.length;
-  for (let i = 0; i < N; i++) {
-    const isl = (i / per) | 0, j = jitter[i];
-    const [cx, cz] = ISLANDS[Math.min(isl, ISLANDS.length - 1)];
-    put(f, i,
-      cx + (j[0] - 0.5) * 0.92, 0.09 + j[1] * 0.46, cz + (j[2] - 0.5) * 0.92,
-      0.15, 0.13, 0.15, isl === STALLED ? '#8fe6ff' : (i % 7 === 0 ? '#ffb066' : '#1f6484'));
-  }
-  F.push(f);
+// 7. back into the field — the stalled desk is working again
+{ const f = blank(); field(f, { healed: true }); F.push(f); }
+
+
+/* ---- work arriving from outside ---------------------------------------- */
+// Orders do not arrive on a beat. Each one has its own speed and its own start.
+const msgSpeed = Array.from({ length: MSG }, (_, k) => 0.07 + ((k * 37) % 11) * 0.012);
+const msgPhase = Array.from({ length: MSG }, (_, k) => ((k * 53) % 97) / 97);
+const msgFrom = Array.from({ length: MSG }, (_, k) => {
+  const side = k % 2 ? 1 : -1;
+  return new T.Vector3(side * 7.5, 2.6 + ((k * 17) % 9) * 0.22, -3.4 + ((k * 29) % 13) * 0.55);
+});
+const msgTo = Array.from({ length: MSG }, (_, k) => {
+  const [cx, cz] = ISLANDS[MSG_TARGETS[k % MSG_TARGETS.length]];
+  return new T.Vector3(cx + 0.32, 0.42, cz - 0.08);
+});
+const msgPos = new T.Vector3();
+// The desks are on screen during the second beat and again at the end.
+const fieldWeight = (u) =>
+  Math.max(
+    T.MathUtils.smoothstep(u, 0.35, 0.9) * (1 - T.MathUtils.smoothstep(u, 1.35, 1.9)),
+    T.MathUtils.smoothstep(u, 5.4, 5.9),
+  );
+function messageAt(k, time) {
+  const raw = (time * msgSpeed[k] + msgPhase[k]) % 1;
+  const t = Math.min(raw * 1.55, 1);            // flies in, then rests on the desk
+  const e = T.MathUtils.smoothstep(t, 0, 1);
+  msgPos.copy(msgFrom[k]).lerp(msgTo[k], e);
+  msgPos.y += Math.sin(Math.PI * e) * 1.5;
+  return msgPos;
 }
 
 /* ---- camera per beat --------------------------------------------------- */
 const POSE = [
   { p: [0, 7.0, 6.4], l: [0, 1.35, 0] },
-  { p: [0.6, 2.3, 7.4], l: [0, 0.5, 0] },
+  { p: [0.4, 0.95, 3.15], l: [-0.25, 0.5, 1.3] },
   { p: [0, 2.1, 5.6], l: [0, 1.3, 0] },
   { p: [3.4, -0.25, 6.6], l: [0.2, -1.25, 0] },
   { p: [0.3, 2.4, 7.0], l: [0, 0.1, 0.2] },
@@ -213,7 +298,14 @@ function morph(u, time) {
       a.s[o + 2] + (b.s[o + 2] - a.s[o + 2]) * e,
     );
     // a cube in motion turns a little; one at rest sits square
-    const spin = Math.sin(e * Math.PI) * 0.9;
+    let spin = Math.sin(e * Math.PI) * 0.9;
+    if (k < MSG) {
+      const w = fieldWeight(u);
+      if (w > 0.002) {
+        dummy.position.lerp(messageAt(k, time), w);
+        spin *= 0.3;                              // paper should not tumble
+      }
+    }
     dummy.rotation.set(spin * 0.5, spin * (0.6 + delay[k]), 0);
     dummy.updateMatrix();
     mesh.setMatrixAt(k, dummy.matrix);
