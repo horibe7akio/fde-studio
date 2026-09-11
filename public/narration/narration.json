@@ -1,0 +1,402 @@
+{
+ "engine": "VOICEVOX",
+ "speaker": "離途・シリアス",
+ "speakerId": 101,
+ "credit": "VOICEVOX:離途",
+ "audio": "./narration/narration.m4a",
+ "duration": 218.2,
+ "lines": [
+  {
+   "chapter": 0,
+   "text": "エーエックスを進めたい。その一言だけでは、システムはつくれません。",
+   "beat": null,
+   "focus": null,
+   "start": 0.0,
+   "end": 5.408
+  },
+  {
+   "chapter": 0,
+   "text": "会社の中には、営業も、経理も、受注の現場もあります。",
+   "beat": null,
+   "focus": "営業",
+   "start": 5.828,
+   "end": 11.503
+  },
+  {
+   "chapter": 0,
+   "text": "課題は経営から出ますが、答えは現場の中にあります。",
+   "beat": null,
+   "focus": "受注現場",
+   "start": 11.923,
+   "end": 16.072
+  },
+  {
+   "chapter": 0,
+   "text": "現場に入り、業務を整理して、経営の成果になるまで見届ける。",
+   "beat": null,
+   "focus": "FDE",
+   "start": 16.492,
+   "end": 21.943
+  },
+  {
+   "chapter": 0,
+   "text": "この役割が、エフディーイーと呼ばれ始めました。",
+   "beat": null,
+   "focus": "FDE",
+   "start": 22.363,
+   "end": 25.989
+  },
+  {
+   "chapter": 1,
+   "text": "ひとつの受注現場に、降りてみます。",
+   "beat": null,
+   "focus": null,
+   "start": 26.939,
+   "end": 29.798
+  },
+  {
+   "chapter": 1,
+   "text": "ここには、まだ仕様がありません。",
+   "beat": null,
+   "focus": null,
+   "start": 30.218,
+   "end": 32.97
+  },
+  {
+   "chapter": 1,
+   "text": "メールで届く注文。エクセルへの転記。",
+   "beat": null,
+   "focus": "注文メール",
+   "start": 33.39,
+   "end": 36.611
+  },
+  {
+   "chapter": 1,
+   "text": "担当者しか知らない、例外の扱い。",
+   "beat": null,
+   "focus": "例外の条件",
+   "start": 37.031,
+   "end": 40.263
+  },
+  {
+   "chapter": 1,
+   "text": "確認が遅い、という一言の中に、いくつもの仕事が隠れています。",
+   "beat": null,
+   "focus": "確認待ち",
+   "start": 40.683,
+   "end": 46.113
+  },
+  {
+   "chapter": 1,
+   "text": "エフディーイーは、担当者と仕事をたどり、誰が、何を見て、何を判断するかを聞きます。",
+   "beat": null,
+   "focus": "FDE",
+   "start": 46.533,
+   "end": 54.351
+  },
+  {
+   "chapter": 2,
+   "text": "散らばった情報を、判断できる形に並べ替えます。",
+   "beat": "organize",
+   "focus": null,
+   "start": 55.301,
+   "end": 59.301
+  },
+  {
+   "chapter": 2,
+   "text": "必要なデータは何か。",
+   "beat": null,
+   "focus": "入力 / データ",
+   "start": 59.721,
+   "end": 61.481
+  },
+  {
+   "chapter": 2,
+   "text": "どの条件なら、自動で進めてよいか。",
+   "beat": null,
+   "focus": "判断 / ルール",
+   "start": 61.901,
+   "end": 65.176
+  },
+  {
+   "chapter": 2,
+   "text": "例外は、誰に確認してもらうか。",
+   "beat": null,
+   "focus": "担当 / 責任",
+   "start": 65.596,
+   "end": 68.871
+  },
+  {
+   "chapter": 2,
+   "text": "入力、判断、担当。この三つに分けたものが、設計図になります。",
+   "beat": null,
+   "focus": null,
+   "start": 69.291,
+   "end": 76.011
+  },
+  {
+   "chapter": 3,
+   "text": "まず、仕事をデータとして見ます。",
+   "beat": null,
+   "focus": null,
+   "start": 76.961,
+   "end": 79.83
+  },
+  {
+   "chapter": 3,
+   "text": "注文メール、では、まだ粗すぎます。",
+   "beat": null,
+   "focus": "判断に必要な事実",
+   "start": 80.25,
+   "end": 83.919
+  },
+  {
+   "chapter": 3,
+   "text": "注文番号、取引先、金額、納期。",
+   "beat": null,
+   "focus": "注文番号",
+   "start": 84.339,
+   "end": 89.299
+  },
+  {
+   "chapter": 3,
+   "text": "判断に必要な事実を、一つずつ取り出します。",
+   "beat": null,
+   "focus": "金額",
+   "start": 89.719,
+   "end": 93.303
+  },
+  {
+   "chapter": 4,
+   "text": "次に、判断を分岐として描きます。",
+   "beat": null,
+   "focus": "条件に一致？",
+   "start": 94.253,
+   "end": 97.283
+  },
+  {
+   "chapter": 4,
+   "text": "金額が一致すれば、自動で進める。",
+   "beat": null,
+   "focus": "自動で進む",
+   "start": 97.703,
+   "end": 100.849
+  },
+  {
+   "chapter": 4,
+   "text": "一致しなければ、人へ戻す。",
+   "beat": null,
+   "focus": "人に戻す",
+   "start": 101.269,
+   "end": 103.84
+  },
+  {
+   "chapter": 4,
+   "text": "暗黙の勘を、条件と例外に分けていきます。",
+   "beat": null,
+   "focus": null,
+   "start": 104.26,
+   "end": 107.887
+  },
+  {
+   "chapter": 5,
+   "text": "そして、判断に人と責任を置きます。",
+   "beat": null,
+   "focus": null,
+   "start": 108.837,
+   "end": 112.005
+  },
+  {
+   "chapter": 5,
+   "text": "誰が実行し、誰が確認し、誰が承認するか。",
+   "beat": null,
+   "focus": "確認",
+   "start": 112.425,
+   "end": 117.598
+  },
+  {
+   "chapter": 5,
+   "text": "人が見る、だけでは、仕事は止まります。",
+   "beat": null,
+   "focus": "誰が引き受ける？",
+   "start": 118.018,
+   "end": 121.741
+  },
+  {
+   "chapter": 5,
+   "text": "判断を返す相手と期限まで、仕組みに含めます。",
+   "beat": null,
+   "focus": "承認",
+   "start": 122.161,
+   "end": 126.033
+  },
+  {
+   "chapter": 6,
+   "text": "三つの概念が、動くシステムになります。",
+   "beat": null,
+   "focus": null,
+   "start": 126.983,
+   "end": 130.353
+  },
+  {
+   "chapter": 6,
+   "text": "注文を取り込み、条件を照合します。",
+   "beat": "order-run",
+   "focus": "取込",
+   "start": 130.773,
+   "end": 134.187
+  },
+  {
+   "chapter": 6,
+   "text": "金額が合わない注文は、自動で登録せず、人の確認へ進みます。",
+   "beat": null,
+   "focus": "人の確認",
+   "start": 134.607,
+   "end": 140.281
+  },
+  {
+   "chapter": 6,
+   "text": "確認した結果を、登録します。",
+   "beat": "order-approve",
+   "focus": "登録",
+   "start": 140.701,
+   "end": 143.507
+  },
+  {
+   "chapter": 6,
+   "text": "整理したルールと役割が、そのまま仕組みになりました。",
+   "beat": null,
+   "focus": null,
+   "start": 143.927,
+   "end": 148.087
+  },
+  {
+   "chapter": 7,
+   "text": "ここで、よくある問いに答えます。",
+   "beat": null,
+   "focus": null,
+   "start": 149.037,
+   "end": 151.639
+  },
+  {
+   "chapter": 7,
+   "text": "エフディーイーの中身は、会社ごとに違います。",
+   "beat": null,
+   "focus": null,
+   "start": 152.059,
+   "end": 155.537
+  },
+  {
+   "chapter": 7,
+   "text": "客先常駐と同じでは、という問いに答えられるのは、名前ではありません。",
+   "beat": null,
+   "focus": null,
+   "start": 155.957,
+   "end": 161.845
+  },
+  {
+   "chapter": 7,
+   "text": "何を決められるか。",
+   "beat": "inspect-0",
+   "focus": "課題・優先順位",
+   "start": 162.265,
+   "end": 163.747
+  },
+  {
+   "chapter": 7,
+   "text": "何に責任を持つか。",
+   "beat": "inspect-1",
+   "focus": "本番での成果",
+   "start": 164.167,
+   "end": 165.906
+  },
+  {
+   "chapter": 7,
+   "text": "学びを、どこに残すか。",
+   "beat": "inspect-2",
+   "focus": "学びを残す",
+   "start": 166.326,
+   "end": 168.651
+  },
+  {
+   "chapter": 7,
+   "text": "この三つを見ると、担っている中身が分かります。",
+   "beat": null,
+   "focus": null,
+   "start": 169.071,
+   "end": 172.698
+  },
+  {
+   "chapter": 8,
+   "text": "もう一度、経営から会社全体を見ます。",
+   "beat": null,
+   "focus": "経営",
+   "start": 173.648,
+   "end": 177.147
+  },
+  {
+   "chapter": 8,
+   "text": "受注現場でつくった接続部品や、評価の手順。",
+   "beat": null,
+   "focus": "受注現場",
+   "start": 177.567,
+   "end": 181.663
+  },
+  {
+   "chapter": 8,
+   "text": "共通化できれば、他の部署でも活かせます。",
+   "beat": "shared",
+   "focus": "再利用できる部品",
+   "start": 182.083,
+   "end": 185.357
+  },
+  {
+   "chapter": 8,
+   "text": "個別の解決を、繰り返し使える力にする。ここが分かれ目です。",
+   "beat": null,
+   "focus": null,
+   "start": 185.777,
+   "end": 191.143
+  },
+  {
+   "chapter": 9,
+   "text": "最後に、エーアイの時代の話をします。",
+   "beat": null,
+   "focus": null,
+   "start": 192.093,
+   "end": 195.335
+  },
+  {
+   "chapter": 9,
+   "text": "エーアイが支援できる工程は、増えていきます。",
+   "beat": "ai",
+   "focus": "AIが構造化・実装を支援",
+   "start": 195.755,
+   "end": 199.233
+  },
+  {
+   "chapter": 9,
+   "text": "それでも、何を任せ、何を確かめるかは、人が決めます。",
+   "beat": null,
+   "focus": "人の確認",
+   "start": 199.653,
+   "end": 205.103
+  },
+  {
+   "chapter": 9,
+   "text": "現場理解、構造化、実装、検収、定着。",
+   "beat": "stages",
+   "focus": null,
+   "start": 205.523,
+   "end": 211.102
+  },
+  {
+   "chapter": 9,
+   "text": "つくるだけでなく、使われるまで見届ける。それが、人に残る役割です。",
+   "beat": null,
+   "focus": "FDE",
+   "start": 211.522,
+   "end": 217.709
+  }
+ ]
+}

@@ -1,0 +1,13 @@
+node_modules/
+dist/
+.playwright-cli/
+_versions/
+presentations/
+
+# Local verification and generated media
+output/
+_evidence/
+presentations/**/.build/
+presentations/**/.codex-finalizer/
+presentations/**/output/
+.DS_Store
