@@ -40,20 +40,6 @@ mesh.instanceMatrix.setUsage(T.DynamicDrawUsage);
 mesh.instanceColor = new T.InstancedBufferAttribute(new Float32Array(N * 3), 3);
 scene.add(mesh);
 
-/* ---- formations ------------------------------------------------------- */
-const F = [];
-const rnd = (() => { let s = 20260911; return () => (s = (s * 1103515245 + 12345) & 0x7fffffff) / 0x7fffffff; })();
-const jitter = Array.from({ length: N }, () => [rnd(), rnd(), rnd()]);
-const delay = Array.from({ length: N }, () => rnd());
-
-const blank = () => ({ p: new Float32Array(N * 3), s: new Float32Array(N * 3), c: new Float32Array(N * 3) });
-const put = (f, i, x, y, z, sx, sy, sz, col) => {
-  f.p[i * 3] = x; f.p[i * 3 + 1] = y; f.p[i * 3 + 2] = z;
-  f.s[i * 3] = sx; f.s[i * 3 + 1] = sy; f.s[i * 3 + 2] = sz;
-  const c = new T.Color(col);
-  f.c[i * 3] = c.r; f.c[i * 3 + 1] = c.g; f.c[i * 3 + 2] = c.b;
-};
-
 // 22 cubes are the work that arrives from outside. The other 242 are eleven desks.
 const MSG = 22;
 const PER = 22;
@@ -67,47 +53,81 @@ const ALONE = 8;     // one person doing all of it; the second chair is empty
 // The two desks the camera actually looks at; arriving work lands on these.
 const MSG_TARGETS = [STALLED, 6];
 
+/* ---- options the reader can turn ---------------------------------------- */
+// Horibe decides these by looking, not by spec. So they are knobs, and they persist.
+const OPT_KEY = 'fde-field-opts';
+const OPT = Object.assign({ person: 'a', speed: 1, alone: 'empty' }, (() => {
+  try { return JSON.parse(localStorage.getItem(OPT_KEY) || '{}'); } catch { return {}; }
+})());
+const saveOpt = () => { try { localStorage.setItem(OPT_KEY, JSON.stringify(OPT)); } catch { /* private window */ } };
+
+/* ---- formations ------------------------------------------------------- */
+let F = [];
+const rnd = (() => { let s = 20260911; return () => (s = (s * 1103515245 + 12345) & 0x7fffffff) / 0x7fffffff; })();
+const jitter = Array.from({ length: N }, () => [rnd(), rnd(), rnd()]);
+const delay = Array.from({ length: N }, () => rnd());
+
+const blank = () => ({ p: new Float32Array(N * 3), s: new Float32Array(N * 3), c: new Float32Array(N * 3) });
+const put = (f, i, x, y, z, sx, sy, sz, col) => {
+  f.p[i * 3] = x; f.p[i * 3 + 1] = y; f.p[i * 3 + 2] = z;
+  f.s[i * 3] = sx; f.s[i * 3 + 1] = sy; f.s[i * 3 + 2] = sz;
+  const c = new T.Color(col);
+  f.c[i * 3] = c.r; f.c[i * 3 + 1] = c.g; f.c[i * 3 + 2] = c.b;
+};
+
 const INK = '#0d3044', SCREEN = '#63dcff', SKIN = '#d6f2ff', TORSO = '#2a79a4';
 const PAPER = '#eef7fb', PHONE = '#1b4a60', SHELF = '#0c2a3a';
 const RED = '#ff5f8a', RED_SOFT = '#ff9ab5', WARM = '#ffb066';
+const HIDE = [0.001, 0.001, 0.001];
 
-// One desk with a person at it. `flat` presses the whole thing to the floor.
+// A desk with someone at it. Four cubes are the person; the shape depends on the knob.
 function desk(f, base, cx, cz, opts) {
-  const { stalled = false, alone = false, papers = 3, flat = 0, calm = false } = opts;
+  const { stalled = false, empty = false, papers = 3, flat = 0 } = opts;
   const y = (v) => (flat ? 0.02 + v * 0.12 : v);
   const h = (v) => (flat ? v * 0.18 : v);
   const dim = (col) => (flat ? '#0c2330' : col);
   let i = base;
   const P = (x, yy, z, sx, sy, sz, col) => put(f, i++, cx + x, y(yy), cz + z, sx, h(sy), sz, dim(col));
 
-  P(0, 0.30, 0, 0.92, 0.05, 0.50, INK);                       // 天板
-  P(0, 0.15, -0.02, 0.70, 0.28, 0.06, INK);                   // 脚
-  P(-0.20, 0.55, -0.14, 0.46, 0.34, 0.04, SCREEN);          // 画面
-  P(-0.20, 0.36, -0.13, 0.09, 0.09, 0.09, INK);               // 画面の台
+  P(0, 0.30, 0, 0.92, 0.05, 0.50, INK);
+  P(0, 0.15, -0.02, 0.70, 0.28, 0.06, INK);
+  P(-0.20, 0.55, -0.14, 0.46, 0.34, 0.04, SCREEN);
+  P(-0.20, 0.36, -0.14, 0.09, 0.09, 0.09, INK);
 
-  // The person. A stalled desk turns away from the screen, toward the phone.
+  // The person. Stalled desks turn away from the screen, toward the phone.
   const face = stalled ? 0.16 : -0.04;
-  if (alone) {
-    P(0, 0.16, 0.60, 0.28, 0.30, 0.06, INK);                  // 空いた椅子
-    P(0, 0.001, 0.60, 0.001, 0.001, 0.001, INK);
-    P(0, 0.001, 0.60, 0.001, 0.001, 0.001, INK);
-  } else {
-    P(face, 0.32, 0.46, 0.26, 0.38, 0.20, TORSO);             // 胴
-    P(face, 0.62, 0.46, 0.19, 0.19, 0.19, stalled ? RED : SKIN); // 頭
-    P(0, 0.16, 0.60, 0.26, 0.30, 0.06, INK);                  // 椅子
+  const head = stalled ? RED : SKIN;
+  if (empty) {
+    P(0, 0.16, 0.60, 0.26, 0.30, 0.06, INK);          // 椅子だけ
+    P(0, 0.001, 0.60, ...HIDE, INK);
+    P(0, 0.001, 0.60, ...HIDE, INK);
+    P(0, 0.001, 0.60, ...HIDE, INK);
+  } else if (OPT.person === 'b') {                     // 肩のある人
+    P(face, 0.30, 0.46, 0.20, 0.34, 0.18, TORSO);
+    P(face, 0.50, 0.46, 0.36, 0.08, 0.20, TORSO);      // 肩
+    P(face, 0.63, 0.46, 0.17, 0.17, 0.17, head);
+    P(0, 0.16, 0.62, 0.26, 0.30, 0.06, INK);
+  } else if (OPT.person === 'c') {                     // 細い人
+    P(face, 0.38, 0.46, 0.15, 0.52, 0.15, TORSO);
+    P(face, 0.72, 0.46, 0.20, 0.20, 0.20, head);
+    P(0, 0.16, 0.62, 0.26, 0.30, 0.06, INK);
+    P(0, 0.001, 0.60, ...HIDE, INK);
+  } else {                                             // a：いまの形
+    P(face, 0.32, 0.46, 0.26, 0.38, 0.20, TORSO);
+    P(face, 0.62, 0.46, 0.19, 0.19, 0.19, head);
+    P(0, 0.16, 0.60, 0.26, 0.30, 0.06, INK);
+    P(0, 0.001, 0.60, ...HIDE, INK);
   }
 
-  for (let k = 0; k < 4; k++) {                                // 書類の山
+  for (let k = 0; k < 4; k++) {
     const on = k < papers;
     P(0.34, 0.34 + k * 0.04, -0.06, on ? 0.26 : 0.001, on ? 0.03 : 0.001, on ? 0.20 : 0.001,
       stalled ? RED_SOFT : PAPER);
   }
-  P(0.41, 0.37, 0.20, 0.13, 0.07, 0.17, stalled ? RED : PHONE); // 電話
+  P(0.41, 0.37, 0.20, 0.13, 0.07, 0.17, stalled ? RED : PHONE);
 
-  for (let k = 0; k < 3; k++) {                                // 棚
-    P(-0.66, 0.14 + k * 0.16, -0.68, 0.22, 0.13, 0.16, SHELF);
-  }
-  for (let k = 0; k < 7; k++) {                                // 周辺
+  for (let k = 0; k < 3; k++) P(-0.66, 0.14 + k * 0.16, -0.68, 0.22, 0.13, 0.16, SHELF);
+  for (let k = 0; k < 6; k++) {
     const j = jitter[(base + k) % N];
     P((j[0] - 0.5) * 1.9, 0.03, (j[2] - 0.5) * 1.9, 0.08, 0.03, 0.08, '#0a2231');
   }
@@ -115,7 +135,7 @@ function desk(f, base, cx, cz, opts) {
 }
 
 function field(f, { flat = 0, healed = false } = {}) {
-  for (let k = 0; k < MSG; k++) {                              // 届いたもの＝机の上の紙
+  for (let k = 0; k < MSG; k++) {
     const isl = MSG_TARGETS[k % MSG_TARGETS.length], [cx, cz] = ISLANDS[isl], j = jitter[k];
     put(f, k, cx + 0.3 + (j[0] - 0.5) * 0.3, flat ? 0.02 : 0.40 + j[1] * 0.05, cz - 0.1 + (j[2] - 0.5) * 0.3,
       0.2, flat ? 0.01 : 0.03, 0.15, flat ? '#0c2330' : (k % 3 === 0 ? '#5fd8ff' : PAPER));
@@ -124,13 +144,11 @@ function field(f, { flat = 0, healed = false } = {}) {
   ISLANDS.forEach(([cx, cz], n) => {
     i = desk(f, i, cx, cz, {
       stalled: !healed && n === STALLED,
-      alone: n === ALONE,
+      empty: n === ALONE && OPT.alone === 'empty',
       papers: [3, 4, 2, 4, 1, 2, 3, 4, 2, 1, 2][n],
       flat,
-      calm: healed,
     });
   });
-  // The FDE arrives and stands next to the desk that was stuck.
   if (healed) {
     const [sx, sz] = ISLANDS[STALLED];
     put(f, MSG + STALLED * PER + 4, sx - 0.55, 0.30, sz + 0.5, 0.22, 0.34, 0.18, WARM);
@@ -138,84 +156,74 @@ function field(f, { flat = 0, healed = false } = {}) {
   }
 }
 
-// 1. the spec: tidy rows of type on a flat sheet
-{
-  const f = blank(), COLS = 22, ROWS = 12;
-  for (let i = 0; i < N; i++) {
-    const col = i % COLS, row = (i / COLS) | 0;
-    const lineLen = [20, 18, 21, 9, 19, 17, 20, 13, 18, 21, 16, 7][row];
-    const on = col < lineLen;
-    put(f, i, -2.1 + col * 0.2, 1.45 + row * 0.004, -1.25 + row * 0.228,
-      on ? 0.15 : 0.001, on ? 0.03 : 0.001, on ? 0.058 : 0.001, on ? '#cfe6f2' : '#0b1f2a');
-  }
-  F.push(f);
-}
-
-// 2. the field: eleven desks, people at them, work arriving from outside
-{ const f = blank(); field(f); F.push(f); }
-
-// 3. the demo: a bright block in the middle, the work pressed flat and dark
-{
-  const f = blank();
-  field(f, { flat: 1 });
-  const SHELL = 40;
-  for (let i = 0; i < SHELL; i++) {
-    const a = (i / SHELL) * Math.PI * 2, r = 0.62 + (i % 3) * 0.09;
-    put(f, i + 60, Math.cos(a) * r, 1.55 + ((i % 4) - 1.5) * 0.3, Math.sin(a) * r, 0.2, 0.2, 0.2, '#7fe6ff');
-  }
-  F.push(f);
-}
-
-// 4. the system of record: four buried layers, and the wiring back up to it
-{
-  const f = blank(), PIPES = 4, PER_PIPE = 11, PIPED = PIPES * PER_PIPE;
-  const px = [-2.6, -0.4, 1.4, 3.0], pz = [-1.4, 1.2, -0.6, 1.8];
-  for (let i = 0; i < N; i++) {
-    if (i < PIPED) {
-      const p = (i / PER_PIPE) | 0, k = i % PER_PIPE;
-      put(f, i, px[p], -1.15 + k * 0.2, pz[p], 0.09, 0.14, 0.09, WARM);
-    } else {
-      const k = i - PIPED, layer = (k / 56) | 0, m = k % 56;
-      put(f, i, -3.5 + (m % 14) * 0.54, -1.15 - layer * 0.36, -1.35 + ((m / 14) | 0) * 0.92,
-        0.5, 0.075, 0.82, layer % 2 ? '#14415a' : '#0d2c3c');
+function buildAll() {
+  F = [];
+  { // 1. 仕様書
+    const f = blank(), COLS = 22, ROWS = 12;
+    for (let i = 0; i < N; i++) {
+      const col = i % COLS, row = (i / COLS) | 0;
+      const lineLen = [20, 18, 21, 9, 19, 17, 20, 13, 18, 21, 16, 7][row];
+      const on = col < lineLen;
+      put(f, i, -2.1 + col * 0.2, 1.45 + row * 0.004, -1.25 + row * 0.228,
+        on ? 0.15 : 0.001, on ? 0.03 : 0.001, on ? 0.058 : 0.001, on ? '#cfe6f2' : '#0b1f2a');
     }
+    F.push(f);
   }
-  F.push(f);
-}
-
-// 5. one continuous path: from under the floor, through the field, to the front
-{
-  const f = blank();
-  const curve = new T.CatmullRomCurve3([
-    new T.Vector3(-3.9, -1.5, -0.6), new T.Vector3(-2.6, -0.35, 0.2), new T.Vector3(-1.3, 0.35, -0.5),
-    new T.Vector3(0.1, 0.5, 0.5), new T.Vector3(1.5, 0.4, -0.3), new T.Vector3(2.8, 0.75, 0.6),
-    new T.Vector3(3.9, 1.15, 1.5),
-  ]);
-  const a = new T.Color('#5fd8ff'), b = new T.Color('#ffb066'), c = new T.Color();
-  for (let i = 0; i < N; i++) {
-    const t = i / (N - 1), v = curve.getPoint(t), j = jitter[i];
-    c.copy(a).lerp(b, t);
-    put(f, i, v.x + (j[0] - 0.5) * 0.055, v.y + (j[1] - 0.5) * 0.055, v.z + (j[2] - 0.5) * 0.055,
-      0.16, 0.16, 0.16, `#${c.getHexString()}`);
+  { const f = blank(); field(f); F.push(f); }                       // 2. 現場
+  { // 3. デモ
+    const f = blank();
+    field(f, { flat: 1 });
+    const SHELL = 40;
+    for (let i = 0; i < SHELL; i++) {
+      const a = (i / SHELL) * Math.PI * 2, r = 0.62 + (i % 3) * 0.09;
+      put(f, i + 60, Math.cos(a) * r, 1.55 + ((i % 4) - 1.5) * 0.3, Math.sin(a) * r, 0.2, 0.2, 0.2, '#7fe6ff');
+    }
+    F.push(f);
   }
-  F.push(f);
-}
-
-// 6. time: a short stretch of building, then a much longer one of being trusted
-{
-  const f = blank(), BUILD = 77, x0 = -3.5;
-  for (let i = 0; i < N; i++) {
-    const inBuild = i < BUILD;
-    const x = inBuild ? x0 + (i / BUILD) * 1.3 : x0 + 1.62 + ((i - BUILD) / (N - BUILD)) * 3.9;
-    put(f, i, x, inBuild ? 1.34 : 1.0, 0.9 + ((i % 3) - 1) * 0.13,
-      0.03, inBuild ? 0.5 : 0.3, 0.3, inBuild ? '#5fd8ff' : WARM);
+  { // 4. 基幹システム
+    const f = blank(), PIPES = 4, PER_PIPE = 11, PIPED = PIPES * PER_PIPE;
+    const px = [-2.6, -0.4, 1.4, 3.0], pz = [-1.4, 1.2, -0.6, 1.8];
+    for (let i = 0; i < N; i++) {
+      if (i < PIPED) {
+        const p = (i / PER_PIPE) | 0, k = i % PER_PIPE;
+        put(f, i, px[p], -1.15 + k * 0.2, pz[p], 0.09, 0.14, 0.09, WARM);
+      } else {
+        const k = i - PIPED, layer = (k / 56) | 0, m = k % 56;
+        put(f, i, -3.5 + (m % 14) * 0.54, -1.15 - layer * 0.36, -1.35 + ((m / 14) | 0) * 0.92,
+          0.5, 0.075, 0.82, layer % 2 ? '#14415a' : '#0d2c3c');
+      }
+    }
+    F.push(f);
   }
-  F.push(f);
+  { // 5. 1本の道
+    const f = blank();
+    const curve = new T.CatmullRomCurve3([
+      new T.Vector3(-3.9, -1.5, -0.6), new T.Vector3(-2.6, -0.35, 0.2), new T.Vector3(-1.3, 0.35, -0.5),
+      new T.Vector3(0.1, 0.5, 0.5), new T.Vector3(1.5, 0.4, -0.3), new T.Vector3(2.8, 0.75, 0.6),
+      new T.Vector3(3.9, 1.15, 1.5),
+    ]);
+    const a = new T.Color('#5fd8ff'), b = new T.Color(WARM), c = new T.Color();
+    for (let i = 0; i < N; i++) {
+      const t = i / (N - 1), v = curve.getPoint(t), j = jitter[i];
+      c.copy(a).lerp(b, t);
+      put(f, i, v.x + (j[0] - 0.5) * 0.055, v.y + (j[1] - 0.5) * 0.055, v.z + (j[2] - 0.5) * 0.055,
+        0.16, 0.16, 0.16, `#${c.getHexString()}`);
+    }
+    F.push(f);
+  }
+  { // 6. 時間
+    const f = blank(), BUILD = 77, x0 = -3.5;
+    for (let i = 0; i < N; i++) {
+      const inBuild = i < BUILD;
+      const x = inBuild ? x0 + (i / BUILD) * 1.3 : x0 + 1.62 + ((i - BUILD) / (N - BUILD)) * 3.9;
+      put(f, i, x, inBuild ? 1.34 : 1.0, 0.9 + ((i % 3) - 1) * 0.13,
+        0.03, inBuild ? 0.5 : 0.3, 0.3, inBuild ? '#5fd8ff' : WARM);
+    }
+    F.push(f);
+  }
+  { const f = blank(); field(f, { healed: true }); F.push(f); }     // 7. 現場（再）
 }
-
-// 7. back into the field — the stalled desk is working again
-{ const f = blank(); field(f, { healed: true }); F.push(f); }
-
+buildAll();
 
 /* ---- work arriving from outside ---------------------------------------- */
 // Orders do not arrive on a beat. Each one has its own speed and its own start.
@@ -237,7 +245,7 @@ const fieldWeight = (u) =>
     T.MathUtils.smoothstep(u, 5.4, 5.9),
   );
 function messageAt(k, time) {
-  const raw = (time * msgSpeed[k] + msgPhase[k]) % 1;
+  const raw = (time * msgSpeed[k] * OPT.speed + msgPhase[k]) % 1;
   const t = Math.min(raw * 1.55, 1);            // flies in, then rests on the desk
   const e = T.MathUtils.smoothstep(t, 0, 1);
   msgPos.copy(msgFrom[k]).lerp(msgTo[k], e);
@@ -395,3 +403,26 @@ if (import.meta.env && import.meta.env.DEV) {
 }
 addEventListener('resize', () => { resize(); measure(); });
 addEventListener('load', measure);
+
+/* ---- knobs -------------------------------------------------------------- */
+{
+  const toggle = document.getElementById('knobs-toggle');
+  const body = document.getElementById('knobs-body');
+  const buttons = [...document.querySelectorAll('.knob button')];
+  const paint = () => buttons.forEach((b) => {
+    b.setAttribute('aria-pressed', String(String(OPT[b.dataset.opt]) === b.dataset.val));
+  });
+  toggle.addEventListener('click', () => {
+    const open = body.hidden;
+    body.hidden = !open;
+    toggle.setAttribute('aria-expanded', String(open));
+  });
+  buttons.forEach((b) => b.addEventListener('click', () => {
+    const key = b.dataset.opt;
+    OPT[key] = key === 'speed' ? Number(b.dataset.val) : b.dataset.val;
+    saveOpt();
+    if (key !== 'speed') buildAll();   // the shape changed, so the formations do too
+    paint();
+  }));
+  paint();
+}

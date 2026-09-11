@@ -23,6 +23,22 @@
 <div class="vignette" aria-hidden="true"></div>
 <p class="hint" aria-hidden="true">スクロール</p>
 
+<aside class="knobs" aria-label="見え方の調整">
+  <button class="knobs-toggle" id="knobs-toggle" aria-expanded="false">見え方</button>
+  <div class="knobs-body" id="knobs-body" hidden>
+    <p class="knob"><span>人の形</span>
+      <button data-opt="person" data-val="a">四角</button><button data-opt="person" data-val="b">肩あり</button><button data-opt="person" data-val="c">細い</button>
+    </p>
+    <p class="knob"><span>仕事が届く速さ</span>
+      <button data-opt="speed" data-val="0.55">ゆっくり</button><button data-opt="speed" data-val="1">いま</button><button data-opt="speed" data-val="1.9">速い</button>
+    </p>
+    <p class="knob"><span>空いた席</span>
+      <button data-opt="alone" data-val="empty">空席のまま</button><button data-opt="alone" data-val="filled">人を座らせる</button>
+    </p>
+    <p class="knob-note">選んだ形は、このブラウザに覚えさせます。</p>
+  </div>
+</aside>
+
 <main id="top">
 
 <section class="beat lead-in" id="b1">
