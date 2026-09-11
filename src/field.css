@@ -108,3 +108,26 @@ h1 em,h2 em{font-style:normal;color:var(--cyan)}
   .hint{animation:none}
   .copy{opacity:1;transform:none;transition:none}
 }
+
+/* knobs: pick by looking, not by spec */
+.knobs{position:fixed;right:clamp(10px,2vw,20px);bottom:clamp(10px,2vh,20px);z-index:25;font-size:12px;text-align:right}
+.knobs-toggle{
+  background:rgba(4,13,18,.82);color:var(--dim);border:1px solid var(--line);
+  border-radius:999px;padding:7px 15px;cursor:pointer;letter-spacing:.12em;font-size:11px;
+  backdrop-filter:blur(7px);transition:.2s;
+}
+.knobs-toggle:hover,.knobs-toggle[aria-expanded="true"]{color:var(--cyan);border-color:var(--cyan)}
+.knobs-body{
+  margin-top:8px;margin-left:auto;text-align:left;padding:14px 16px;border:1px solid var(--line);border-radius:14px;
+  background:rgba(4,13,18,.9);backdrop-filter:blur(9px);max-width:min(300px,84vw);
+}
+.knob{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:0 0 12px}
+.knob>span{flex:1 0 100%;color:var(--dim);font-size:11px;letter-spacing:.1em;margin-bottom:2px}
+.knob button{
+  background:transparent;color:var(--ink);border:1px solid var(--line);
+  border-radius:8px;padding:6px 11px;cursor:pointer;font-size:12px;transition:.18s;
+}
+.knob button:hover{border-color:rgba(95,216,255,.5)}
+.knob button[aria-pressed="true"]{background:rgba(95,216,255,.16);border-color:var(--cyan);color:#d8f4ff}
+.knob-note{margin:0;color:var(--dim);font-size:10.5px;line-height:1.6}
+@media(max-width:760px){.knobs{right:10px;bottom:10px}}
