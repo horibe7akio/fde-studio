@@ -51,8 +51,10 @@ jobs:
       - name: 個人環境の情報が混ざっていないか
         run: |
           # Anything that only works on one person's machine must not ship.
+          # This file is skipped: it holds the search pattern itself, so it always matches.
           hits=$(git ls-files \
             | grep -vE '\.(png|jpe?g|webp|gif|m4a|mp3|mp4|woff2?|ico)$' \
+            | grep -v '^.github/workflows/ci.yml$' \
             | xargs grep -nE '/Users/|/Volumes/|~/Downloads' 2>/dev/null || true)
           if [ -n "$hits" ]; then
             echo "$hits"
