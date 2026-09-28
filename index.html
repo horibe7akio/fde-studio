@@ -1,92 +1,22 @@
 <!doctype html>
 <html lang="ja">
-<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#03080b"><meta name="description" content="FDEは何をする仕事？ 分断された業務・データ・AIがつながる3D図解で、現場での役割を読み解く。"><link rel="icon" href="./favicon.svg"><title>FDE — 課題をほどき、仕組みにする。</title></head>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>3Dでわかる</title>
+<meta name="description" content="AIと仕事の「しくみ」を、スクロールで形が変わる3Dで説明するシリーズ。">
+<link rel="icon" href="./favicon.svg" type="image/svg+xml">
+</head>
 <body>
-<a href="#intro" class="skip-link">解説へ移動</a>
-<header><a class="brand" href="#intro"><span class="brand-symbol">⌘</span> FDE<span class="brand-sub">FIELD SYSTEM / 03</span></a><div class="header-tools"><span class="edition">INTERACTIVE EXPLAINER</span><button id="look" aria-pressed="false">LOOK: CYBER</button><button id="motion" aria-pressed="false">MOTION ON</button><a href="./field.html">現場に入る理由 ↗</a><a href="./tasks.html">作業で見る ↗</a><a href="#sources">出典 ↗</a></div></header>
-<main><div id="experience">
-<div class="stage"><nav class="workflow-nav" aria-label="FDEの仕事の流れ"><span class="nav-heading">FDEの仕事</span><a href="#question" data-workflow="understand"><small>01</small>現場理解</a><span aria-hidden="true">→</span><a href="#discover" data-workflow="organize"><small>02</small>業務整理</a><span aria-hidden="true">→</span><a href="#data-layer" data-workflow="design"><small>03</small>設計</a><span aria-hidden="true">→</span><a href="#build" data-workflow="build"><small>04</small>実装</a><span aria-hidden="true">→</span><a href="#reuse" data-workflow="spread"><small>05</small>展開</a></nav><canvas id="cosmos" aria-label="企業から業務の概念層までを移動する3D図解"></canvas><div class="vignette"></div><p class="stage-title" id="stage-title" aria-hidden="true"></p><nav class="view-layers" aria-label="見るレイヤー"><span class="nav-heading">見るレイヤー</span><a href="#intro" data-view-layer="management"><i aria-hidden="true"></i><span>経営<small>レイヤー</small></span></a><a href="#question" data-view-layer="field"><i aria-hidden="true"></i><span>現場<small>レイヤー</small></span></a><a href="#build" data-view-layer="system"><i aria-hidden="true"></i><span>システム<small>レイヤー</small></span></a><a href="#data-layer" data-view-layer="data"><i aria-hidden="true"></i><span>データ<small>レイヤー</small></span></a></nav><div class="people-legend"><span>● FDE</span><span>● 業務担当</span><b id="zoom-readout">経営レイヤー</b></div><div class="stage-tags" aria-hidden="true"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div><div id="fallback" hidden>3Dを表示できない環境です。解説と操作は引き続き使えます。</div><div class="diagram-caption" id="diagram-caption">AIがあっても、現場とつながらなければ動かない。</div><div class="scene-readout"><span class="signal"></span><span id="scene-label">SYSTEM / DISCONNECTED</span><span id="scene-state">EXPLORING</span></div></div>
-
-<section class="chapter hero" id="intro" data-chapter="0"><div class="copy">
-<p class="eyebrow"><span>3Dでわかる</span> AX・DXを、現場と経営でつなぐ人（FDE）</p><p class="hero-title" aria-hidden="true">FDE<span>_</span></p>
-<h1>課題をほどき、<br><em>動く仕組みに。</em></h1>
-<p class="lead">「AXを進めたい。」<br>その一言だけでは、システムはつくれない。<br><strong>現場に入り、業務を整理し、<br>経営の成果になるまで見届ける。</strong><br>この役割が、FDEと呼ばれ始めた。</p>
-<div class="hero-status"><b id="connection-status">経営レイヤー</b><span id="connection-detail">まず、ひとつの受注現場に入ってみよう。</span></div>
-<div class="hero-actions"><button class="primary solid" id="deploy-button">現場へズーム <span>↘</span></button><button class="play-button" id="autoplay" aria-pressed="false"><span>▷</span> 映像として見る<small id="play-note">音声つき</small></button></div>
-<p class="micro">オレンジの人物がFDE。水色は、一緒に働く業務担当者。</p></div><div class="hero-foot"><span>経営 → 現場 → システム → データ</span><span>ONE FIELD, A COMPANY-WIDE CHANGE</span></div></section>
-
-<section class="chapter" id="question" data-chapter="1"><span class="chapter-ghost" aria-hidden="true">01</span><div class="copy">
-<p class="eyebrow">01 / 現場のレイヤーへ</p><h2>現場には、<br><em>まだ「仕様」がない。</em></h2>
-<p class="lead">メールで届く注文。Excelへの転記。<br>担当者しか知らない、例外の扱い。<br>「確認が遅い」の中に、いくつもの仕事がある。</p>
-<div class="take-home"><small>FDEがすること</small>担当者と仕事をたどり、<br>誰が、何を見て、何を判断するかを聞く。</div>
-<p class="body-copy">ツールの導入からではなく、業務の理解から。<br>目の前の困りごとを、そのまま仕様にしない。</p>
-<p class="small">架空の受注業務を使った模式図です。実際の顧客事例や効果測定ではありません。</p>
-</div></section>
-
-<section class="chapter" id="discover" data-chapter="2"><span class="chapter-ghost" aria-hidden="true">02</span><div class="copy">
-<p class="eyebrow">02 / 業務を、構造に変える</p><h2>散らばる情報を、<br><em>判断できる設計へ。</em></h2>
-<p class="lead">必要なデータは何か。<br>どの条件なら、自動で進めてよいか。<br>例外は、誰に確認してもらうか。</p>
-<div class="choices" role="group" aria-label="業務を整理する"><button data-choice="tool" aria-pressed="false"><span>01</span> 整理前の現場を見る <b>↶</b></button><button data-choice="field" aria-pressed="false"><span>02</span> FDEと業務を整理する <b>↗</b></button></div>
-<p class="feedback" id="choice-result" aria-live="polite">散らばった情報を「入力」「判断」「担当」に整理してみよう。</p>
-<div class="take-home"><small>ここが設計の分かれ目</small>自動化する作業と、人に残す判断を分ける。<br>これが、システムにするための設計図になる。</div>
-</div></section>
-
-<section class="chapter concept-chapter" id="data-layer" data-chapter="3"><span class="chapter-ghost" aria-hidden="true">03</span><div class="copy">
-<p class="eyebrow">03 / CONCEPT LAYER — DATA</p><h2>まず、仕事を<br><em>データとして見る。</em></h2>
-<p class="lead">「注文メール」では、まだ粗すぎる。<br>注文番号、取引先、金額、納期。<br>判断に必要な事実を、一つずつ取り出す。</p>
-<div class="concept-index"><span>DATA</span><b>事実を、同じ形で扱えるようにする</b></div>
-<div class="take-home"><small>FDEの問い</small>何が届けば、次の仕事を始められるか。<br>欠けたとき、誰が気づけるか。</div>
-</div></section>
-
-<section class="chapter concept-chapter" id="decision-layer" data-chapter="4"><span class="chapter-ghost" aria-hidden="true">04</span><div class="copy">
-<p class="eyebrow">04 / CONCEPT LAYER — DECISION</p><h2>次に、判断を<br><em>分岐として描く。</em></h2>
-<p class="lead">金額が一致すれば、自動で進める。<br>一致しなければ、人へ戻す。<br>暗黙の勘を、条件と例外に分ける。</p>
-<div class="concept-index lime"><span>RULE</span><b>自動化できる判断と、人に残す判断</b></div>
-<div class="take-home"><small>FDEの問い</small>どの条件まで機械に任せるか。<br>間違えたとき、止められるか。</div>
-</div></section>
-
-<section class="chapter concept-chapter" id="owner-layer" data-chapter="5"><span class="chapter-ghost" aria-hidden="true">05</span><div class="copy">
-<p class="eyebrow">05 / CONCEPT LAYER — OWNER</p><h2>そして、判断に<br><em>人と責任を置く。</em></h2>
-<p class="lead">誰が実行し、誰が確認し、誰が承認するか。<br>「人が見る」だけでは、仕事は止まる。<br>判断を返す相手と期限まで、仕組みに含める。</p>
-<div class="concept-index amber"><span>OWNER</span><b>判断が止まらない責任の輪をつくる</b></div>
-<div class="take-home"><small>FDEの問い</small>例外は、誰の画面に届くか。<br>その人は、何を見れば決められるか。</div>
-</div></section>
-
-<section class="chapter" id="build" data-chapter="6"><span class="chapter-ghost" aria-hidden="true">06</span><div class="copy">
-<p class="eyebrow">06 / 3つの概念を、動くシステムへ</p><h2>データ・判断・担当が、<br><em>システムになる。</em></h2>
-<p class="lead">注文を取り込み、条件を照合。<br>例外は人に渡し、確認した結果を登録する。<br>整理したルールと役割が、そのまま仕組みになる。</p>
-<div class="order-demo"><span class="demo-label">架空の注文 / 金額に不一致あり</span><button class="primary solid" id="run-order">サンプル注文を流す <span>→</span></button><p id="order-result" class="feedback" aria-live="polite">この注文は、自動登録せず人の確認へ進む設計です。</p></div>
-<div class="take-home"><small>FDEがすること</small>実装して、例外・誤り・権限を確かめる。<br>業務担当と試し、使われるまで直す。</div><p class="small">このデモは仕組みの説明です。実システムや外部データには接続していません。[1]</p>
-</div></section>
-
-<section class="chapter" id="difference" data-chapter="7"><span class="chapter-ghost" aria-hidden="true">07</span><div class="copy">
-<p class="eyebrow">07 / 定義は、会社ごとに違う</p><h2>名前より、<br><em>ここを見る。</em></h2><p class="lead">FDEの中身は会社ごとに違う。<br>「客先常駐と同じでは？」という問いにも、<br>答えられるのは名前ではなく、担っている中身。</p>
-<div class="inspectors"><button data-inspect="0" aria-expanded="false"><span>01</span>何を決められるか<b>＋</b></button><p hidden>顧客と課題・優先順位を決め、技術判断や試作を進められるか。裁量は会社や契約によって異なります。</p><button data-inspect="1" aria-expanded="false"><span>02</span>何に責任を持つか<b>＋</b></button><p hidden>つくったものが本番で使われ、業務にどんな変化をもたらしたかまで追うか。人月ではなく成果で契約しているかも、見分けの手がかりになります。</p><button data-inspect="2" aria-expanded="false"><span>03</span>学びをどこに残すか<b>＋</b></button><p hidden>現場の解決を共通部品や製品へ戻せるか。PalantirやLayerXのプロダクト型FDEが重視する循環です。</p></div>
-<p class="small">SI・SES・コンサルにも同様の仕事を担う人がいます。FDEの役割は企業により異なり、職種の優劣ではありません。[1][2][3]<br><a class="source-note" href="https://x.com/tabbata/status/2088045584947237314" target="_blank" rel="noopener">X上の「SESとの違いは？」という問い ↗</a></p>
-</div></section>
-
-<section class="chapter" id="reuse" data-chapter="8"><span class="chapter-ghost" aria-hidden="true">08</span><div class="copy">
-<p class="eyebrow">08 / もう一度、企業全体を見る</p><h2>一つの現場から、<br><em>企業全体の力へ。</em></h2><p class="lead">受注現場でつくった接続部品や評価の手順。<br>共通化できれば、他の部署でも活かせる。<br>さらに、別の顧客への展開につながることもある。</p>
-<button class="primary" id="reuse-button" aria-pressed="false">学びを、次の現場へ <span>↗</span></button><p class="feedback" id="reuse-result" aria-live="polite">カメラを引いてみる。一つの現場が、企業のどこにあるか見えてきます。</p>
-<div class="take-home"><small>ここがポイント</small>個別の解決を、繰り返し使える力にする。</div><p class="small">プロダクト型FDEが重視する考え方です。個別対応が増えるだけなら、人手への依存は残ります。[2][3][4]</p>
-</div></section>
-
-<section class="chapter" id="future" data-chapter="9"><span class="chapter-ghost" aria-hidden="true">09</span><div class="copy">
-<p class="eyebrow">09 / AI時代、人に残る役割</p><h2>AIがつくる。<br><em>人が、引き受ける。</em></h2><p class="lead">AIが支援できる工程は増えていく。<br>それでも、何を任せ、何を確かめるかを決める。</p>
-<div class="mode-switch" role="group" aria-label="人とAIの協働"><button data-ai="0" aria-pressed="true">人の仕事</button><button data-ai="1" aria-pressed="false">AIと協働する ✦</button></div>
-<p class="feedback" id="ai-result" aria-live="polite">現場理解 → 構造化 → 実装 → 検収 → 定着。工程に分けると、役割の変化が見えてきます。</p><p class="small">5工程は堀新一郎氏の分析を参考に構成。Palantir AI FDEはFoundry内で利用者の権限に従い、レビューを前提に構築を支援します。自動化の範囲は製品により異なります。[5][6]</p>
-</div></section>
-</div>
-<section class="ending" id="takeaway"><p class="eyebrow">FDE / FORWARD DEPLOYED ENGINEER</p><h2>技術を届ける、だけじゃない。<br><em>現場で、成果になるまで。</em></h2><p class="lead">困っている人と、仕事を見る。<br>小さく試し、使われるまで確かめる。<br>次のフィールドは、あなたの目の前にある。</p><a class="primary" href="#intro">もう一度、つないでみる <span>↑</span></a></section>
-<section id="sources" class="sources"><div><p class="eyebrow">RESEARCH & REFERENCES</p><h2>図解の、その先へ。</h2><p>企業の職務説明、実務者の分析、X上の問いをもとに独自に構成しました。SNS上の反応は、人口比の世論を示しません。3Dは仕組みを説明する模式図です。</p><p class="micro">調査時点 / 2026.09.10<br>ナレーション音声 VOICEVOX:離途</p></div><ol>
-<li><a href="https://openai.com/careers/forward-deployed-engineer-(fde)-seattle-seattle/" target="_blank" rel="noopener">OpenAI / 職務と本番成果 <span>↗</span></a></li>
-<li><a href="https://blog.palantir.com/a-day-in-the-life-of-a-palantir-forward-deployed-software-engineer-45ef2de257b1" target="_blank" rel="noopener">Palantir / 現場で働くFDSE <span>↗</span></a></li>
-<li><a href="https://note.layerx.co.jp/n/n69d3751d5c28" target="_blank" rel="noopener">LayerX / 個社対応と汎用化 <span>↗</span></a></li>
-<li><a href="https://a16z.com/services-led-growth/" target="_blank" rel="noopener">a16z / 導入支援の価値と限界 <span>↗</span></a></li>
-<li><a href="https://x.com/horrrrry/article/2095771612381638672" target="_blank" rel="noopener">堀新一郎 / AI-FDE時代の仕事 <span>↗</span></a></li>
-<li><a href="https://www.palantir.com/docs/foundry/ai-fde/overview" target="_blank" rel="noopener">Palantir / AI FDE公式ドキュメント <span>↗</span></a></li>
-<li><a href="https://incubation-base.com/column/forward-deployed-engineer-fde/" target="_blank" rel="noopener">Incubation Base / FDEと組織 <span>↗</span></a></li>
-</ol></section>
+<canvas id="bg" aria-hidden="true"></canvas>
+<main class="portal">
+  <header class="p-head">
+    <p class="p-eyebrow"><i></i>SERIES</p>
+    <h1>3Dで<em>わかる</em></h1>
+    <p class="p-lead">言葉だけだと掴みにくいAIと仕事のしくみを、<span class="ph">スクロールで形が変わる3Dで</span>見せる資料集です。</p>
+  </header>
+  <ol class="cards" id="cards"></ol>
 </main>
-<nav class="chapter-nav" aria-label="章を選ぶ"></nav><button id="stop-play" hidden>Ⅱ 映像モードを止める</button><div class="progress"><div id="progress-fill"></div></div><footer><span>FDE / FIELD SYSTEM</span><span class="footer-edition">INDEPENDENT EXPLAINER · V.03</span><a href="#intro">TOP ↑</a></footer><script type="module" src="/src/main.js"></script>
-</body></html>
+<script type="module" src="/src/portal.js"></script>
+</body>
+</html>

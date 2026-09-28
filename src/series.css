@@ -1,0 +1,20 @@
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&family=Space+Grotesk:wght@400;500;600&display=swap');
+/* 「3Dでわかる」シリーズ共通の土台（FDEと同じ色と書体） */
+:root{
+  color-scheme:dark;
+  --bg:#060a13;--text:#e7edf6;--muted:#95a5bc;--dim:#6f819c;--cyan:#96e5ff;--orange:#ffa777;
+  --red:#ff7a7a;--yellow:#ffd84a;--line:#9bbbd127;--line2:#9bbbd145;
+  --sans:'Noto Sans JP','Hiragino Sans','Yu Gothic',sans-serif;
+  --latin:'Space Grotesk','Noto Sans JP',sans-serif;
+}
+*{box-sizing:border-box}
+html{background:var(--bg)}
+body{margin:0;background:var(--bg);color:var(--text);font-family:var(--sans);-webkit-font-smoothing:antialiased;line-height:1.9}
+a{color:inherit}
+a:focus-visible,button:focus-visible{outline:2px solid var(--cyan);outline-offset:4px}
+.ph{display:inline-block}
+.series-bar{position:fixed;z-index:30;top:0;left:0;right:0;display:flex;justify-content:space-between;align-items:center;gap:16px;padding:16px max(16px,4vw);font-family:var(--latin);font-size:11px;letter-spacing:.2em;color:var(--muted);background:linear-gradient(#060a13f2,#060a1300)}
+.series-bar a{text-decoration:none}
+.series-bar .series{color:var(--text);font-family:var(--sans);font-weight:700;letter-spacing:.08em}
+.series-bar .series span{color:var(--cyan)}
+.series-bar .here{color:var(--cyan)}

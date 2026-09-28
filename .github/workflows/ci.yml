@@ -32,7 +32,7 @@ jobs:
       - name: すべてのページが出力されているか
         run: |
           missing=0
-          for page in index.html tasks.html field.html; do
+          for page in index.html fde/index.html fde/tasks.html fde/field.html harness/index.html; do
             if [ -f "dist/$page" ]; then
               echo "ok       dist/$page"
             else
