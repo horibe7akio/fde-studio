@@ -142,3 +142,19 @@ tbody td{color:#c9d4e2}
   .layer-nav{display:none}
   .caption{left:12px;right:12px;bottom:10px;font-size:13px;padding:8px 11px}
 }
+
+/* PR動画の書き出し（?motion）：3Dと大きな文字だけを見せる */
+.motion body{overflow:hidden}
+.motion main,.motion .day-nav,.motion .layer-nav,.motion .series-bar,.motion .progress,.motion .stop-play,.motion .caption,.motion .compare-wrap,.motion .ending,.motion .sources{display:none!important}
+.motion .stage{position:fixed;inset:0;height:100vh;margin:0}
+#mg{position:fixed;inset:0;z-index:40;pointer-events:none}
+#mg .mg-type{position:absolute;left:6.5vw;bottom:12vh;max-width:88vw}
+#mg .mg-line{overflow:hidden;padding:.08em 0}
+#mg .mg-line span{display:inline-block;white-space:nowrap;font-size:clamp(34px,3.5vw,70px);font-weight:900;line-height:1.28;letter-spacing:-.01em;color:var(--text);text-shadow:0 4px 30px #000c,0 0 2px #000}
+#mg .mg-line em{font-style:normal;color:var(--cyan)}
+#mg .mg-line b{color:var(--red)}
+#mg .mg-dip{position:absolute;inset:0;background:#03060c;opacity:0}
+#mg .mg-end{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;opacity:0}
+#mg .mg-end p{margin:0;font-family:var(--latin);font-size:22px;letter-spacing:.3em;color:var(--cyan)}
+#mg .mg-end h1{margin:0;font-size:120px;font-weight:900;letter-spacing:.04em;color:var(--text)}
+#mg .mg-end span{font-size:26px;color:var(--muted);letter-spacing:.12em}

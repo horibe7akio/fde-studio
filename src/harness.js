@@ -22,6 +22,10 @@ const layerNav = document.querySelector('.layer-nav');
 const bar = document.getElementById('bar');
 const stageEl = document.querySelector('.stage');
 const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+// ?motion：PR動画の書き出し用。時刻を外から1コマずつ進め、文字の演出を重ねる
+const MOTION = new URLSearchParams(location.search).has('motion');
+if (MOTION) document.documentElement.classList.add('motion');
+let gOverride = null;
 
 const COL = { bg: 0x060a13, text: 0xe7edf6, cyan: 0x96e5ff, orange: 0xffa777, red: 0xff7a7a, yellow: 0xffd84a, violet: 0xb79bff };
 const clamp = (x, a = 0, b = 1) => Math.max(a, Math.min(b, x));
@@ -478,6 +482,7 @@ function measure() {
   renderer.setSize(W, H, false);
   grade.setSize(W, H);
   if (mobile) { camera.aspect = W / H; camera.clearViewOffset(); }
+  else if (MOTION) { camera.aspect = W / H; camera.clearViewOffset(); }
   else { camera.aspect = (W * 1.5) / H; camera.setViewOffset(W * 1.5, H, 0, 0, W, H); }
   camera.updateProjectionMatrix();
   tops = secs.map(s => s.getBoundingClientRect().top + window.scrollY);
@@ -588,7 +593,7 @@ let snap = true, clock = 0, frameDt = 0.016, last = 0, inView = true;
 new IntersectionObserver(e => { inView = e[0].isIntersecting; }).observe(stageEl);
 function update() {
   queued = false;
-  const g = progress();
+  const g = gOverride ?? progress();
   const grown = ease(ramp(intro, 0, 0.4)), fields = ramp(intro, 0.25, 0.55), boards = ramp(intro, 0.45, 0.72);
 
   // スタジアム：冒頭で地面から立ち上がり、05章でせり上がって光る
@@ -724,5 +729,54 @@ function loop(now) {
 window.addEventListener('resize', () => { measure(); snap = true; });
 if (document.fonts && document.fonts.ready) document.fonts.ready.then(measure);
 measure(); update();
-requestAnimationFrame(loop);
-if (!reduced) requestAnimationFrame(introTick);
+if (!MOTION) { requestAnimationFrame(loop); if (!reduced) requestAnimationFrame(introTick); }
+
+// ---------- PR動画（?motion） ----------
+if (MOTION) {
+  const mg = document.createElement('div'); mg.id = 'mg';
+  mg.innerHTML = '<div class="mg-type"></div><div class="mg-dip"></div><div class="mg-end"><p>3Dでわかる</p><h1>ハーネス</h1><span>なぜ毎日組み直すのか</span></div>';
+  document.body.append(mg);
+  const typeEl = mg.querySelector('.mg-type'), dip = mg.querySelector('.mg-dip'), end = mg.querySelector('.mg-end');
+  // [始まり秒, 終わり秒, g の始まり, g の終わり, 文字の行]
+  const SEGS = () => [
+    [0, 3, 0.02, 0.5, ['ハーネスは、なぜ', '<em>毎日</em>組み直すのか。']],
+    [3, 8, p(1, 4, 0.2), p(1, 4, 0.8), ['ボードは<em>一枚</em>。', '試合は、<em>二つ</em>。']],
+    [8, 13, p(2, 5, 0), p(2, 6, 0.8), ['同じルールが、', '<em>助け</em>にも、<b>足かせ</b>にもなる。']],
+    [13, 18, p(3, 1, 0.2), p(3, 3, 0.9), ['気づけば、<em>最大公倍数</em>。', '攻撃的にしようとして、<b>8-1-1</b>。']],
+    [18, 23, p(4, 0, 0), p(4, 3, 0.9), ['とある案件（試合）で最適なハーネスは、', '他の試合で<em>最適とはかぎらない</em>。']],
+    [23, 27, p(7, 3, 0), p(7, 3, 0.95), ['だから、ハーネスは', '<em>毎日組み直す</em>。']],
+    [27, 30.5, p(7, 3, 0.95), p(7, 3, 0.99), []],
+  ];
+  let segNow = -1;
+  window.__frame = t => {
+    const segs = SEGS();
+    const i = Math.max(0, segs.findIndex(([a, b]) => t >= a && t < b));
+    const [a, b, g0, g1, lines] = segs[i === -1 ? segs.length - 1 : i];
+    const k = clamp((t - a) / (b - a));
+    if (i !== segNow) {
+      snap = i !== 0 || segNow === -1;
+      segNow = i;
+      typeEl.innerHTML = lines.map(l => `<div class="mg-line"><span>${l}</span></div>`).join('');
+    }
+    gOverride = lerp(g0, g1, k);
+    intro = i === 0 ? clamp(t / 2.6) : 1;
+    clock = t; frameDt = 1 / 30;
+    update();
+    // 1行ずつ下からせり上がり、場面の終わりで消える
+    [...typeEl.children].forEach((el, j) => {
+      const inK = ease(ramp(t, a + 0.25 + j * 0.35, a + 0.85 + j * 0.35)), outK = ramp(t, b - 0.45, b - 0.1);
+      el.firstChild.style.transform = `translateY(${(1 - inK) * 110}%)`;
+      el.style.opacity = String(1 - outK);
+    });
+    // 場面の変わり目で0.25秒の暗転、最後は暗くしてエンドカード
+    const cut = Math.max(...segs.slice(1).map(([s0]) => 1 - clamp(Math.abs(t - s0) / 0.14)));
+    const endK = ramp(t, 27, 27.6);
+    dip.style.opacity = String(Math.max(cut, endK * 0.86));
+    end.style.opacity = String(ease(ramp(t, 27.3, 28.1)));
+    end.style.transform = `translateY(${(1 - ease(ramp(t, 27.3, 28.1))) * 16}px)`;
+    return true;
+  };
+  window.__ready = false;
+  const wait = () => (narration ? (window.__ready = true) : setTimeout(wait, 100));
+  wait();
+}
