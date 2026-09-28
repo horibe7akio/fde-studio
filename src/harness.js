@@ -491,8 +491,8 @@ function measure() {
   W = canvas.clientWidth; H = canvas.clientHeight; mobile = innerWidth < 900;
   renderer.setSize(W, H, false);
   grade.setSize(W, H);
-  if (mobile) { camera.aspect = W / H; camera.clearViewOffset(); }
-  else if (MOTION) { camera.aspect = W / H; camera.clearViewOffset(); }
+  if (mobile && !EXPLAIN_PAGE) { camera.aspect = W / H; camera.clearViewOffset(); }
+  else if (MOTION || EXPLAIN_PAGE) { camera.aspect = W / H; camera.clearViewOffset(); }
   else { camera.aspect = (W * 1.5) / H; camera.setViewOffset(W * 1.5, H, 0, 0, W, H); }
   camera.updateProjectionMatrix();
   tops = secs.map(s => s.getBoundingClientRect().top + window.scrollY);
@@ -918,7 +918,7 @@ if (EXPLAIN) {
     return { root, bg, card, dots, fx, fy, lab, B, hook, act, same, arrow, loopDot, links, cardBox, name };
   }
   function drawMap(t) {
-    const want = MOTION ? 'wide' : 'tall';
+    const want = MOTION || (EXPLAIN_PAGE && !mobile) ? 'wide' : 'tall';
     if (t < 0) { if (map) map.root.style.opacity = '0'; return; }
     if (!map || mapLayout !== want) { map = buildMap(want); mapLayout = want; }
     const m = map; m.root.style.opacity = '1';
@@ -926,7 +926,7 @@ if (EXPLAIN) {
     m.bg.setAttribute('opacity', String(0.78 * A(0, 0, 0.4)));
     // 切り出し：画面上のボードの位置から、左のカードへ
     const k = ease(A(0, 0.05, 0.7));
-    const [cx, cy, cw, ch] = m.cardBox, [vw] = MOTION ? LAYOUTS.wide.vb : LAYOUTS.tall.vb;
+    const [cx, cy, cw, ch] = m.cardBox, [vw] = LAYOUTS[m.name].vb;
     const sx = vw / 2 - (cx + cw / 2), sy = 20 - cy;
     m.card.setAttribute('transform', `translate(${(1 - k) * sx} ${(1 - k) * sy}) translate(${cx + cw / 2} ${cy}) scale(${lerp(0.35, 1, k)}) translate(${-(cx + cw / 2)} ${-cy})`);
     m.card.setAttribute('opacity', String(A(0, 0, 0.2)));
@@ -1094,7 +1094,7 @@ if (EXPLAIN) {
       $('.ex-end').style.opacity = String(ease(ramp(t, endAt + 0.2, endAt + 0.9)));
     } else {
       // ページ：字幕は再生中だけ。ナビは場面で光らせる
-      if (!exPlaying) $('.ex-cap').style.opacity = '0';
+      document.documentElement.classList.toggle('at-hero', sc === 0 && t < 0.2);
       document.querySelectorAll('[data-scene]').forEach(a => a.classList.toggle('on', Number(a.dataset.scene) === sc));
       const layer = sc === 1 ? (t < T(1, 4) ? 'stadium' : 'board') : sc === 2 || sc === 3 ? 'board' : sc === 6 && t >= T(6, 2) ? 'board' : 'pitch';
       layerLinks.forEach(a => a.classList.toggle('on', a.dataset.layer === layer));

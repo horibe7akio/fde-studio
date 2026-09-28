@@ -208,3 +208,26 @@ tbody td{color:#c9d4e2}
 @media (max-width:899px){.explain-page #ex .ex-mapwrap{left:6px;right:6px;top:52px;bottom:auto;height:calc(46svh - 56px)}}
 @media (max-width:899px){.explain-page #ex{z-index:6}}
 .explain-page #c7{padding-bottom:70svh}
+
+/* ページも動画と同じ見た目：3Dを画面いっぱい、本文の列は出さず、字幕とラベルで進める */
+.explain-page .stage::after{display:none}
+.explain-page main .chapter:not(.hero) .copy{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.explain-page .hero .copy{transition:opacity .4s}
+.explain-page:not(.at-hero) .hero .copy{opacity:0;pointer-events:none}
+.explain-page .layer-nav{display:none}
+.explain-page #ex .ex-mapwrap{inset:0}
+.explain-page #ex .ex-chip{font-size:clamp(13px,1.15vw,22px);padding:.4em .8em}
+.explain-page #ex .ex-chip.score{font-size:clamp(15px,1.35vw,26px)}
+.explain-page #ex .ex-chip.score b{font-size:1.25em}
+.explain-page #ex .ex-q{left:50%;font-size:clamp(110px,11vw,220px)}
+.explain-page #ex .ex-cal{left:50%}
+.explain-page #ex .ex-cal i{width:clamp(64px,5.7vw,110px);height:clamp(64px,5.7vw,110px);font-size:clamp(30px,2.7vw,52px)}
+.explain-page #ex .ex-cap{left:10%;right:10%;bottom:6vh;text-align:center;font-size:clamp(17px,1.8vw,34px);background:none;border:0;padding:0;text-shadow:0 2px 12px #000,0 0 3px #000}
+@media (max-width:899px){
+  .explain-page .stage{position:sticky;top:0;height:100svh;margin-bottom:-100svh;z-index:0}
+  .explain-page main{padding-top:0}
+  .explain-page #ex{z-index:6}
+  .explain-page #ex .ex-mapwrap{inset:60px 6px 90px 6px}
+  .explain-page #ex .ex-cap{top:auto;bottom:4vh;font-size:15px;left:5%;right:5%}
+  .explain-page .hero .copy{background:linear-gradient(#060a1300,#060a13e6 30%)}
+}
