@@ -1,0 +1,298 @@
+{
+ "engine": "VOICEVOX",
+ "speaker": "離途・シリアス",
+ "speakerId": 101,
+ "credit": "VOICEVOX:離途",
+ "audio": "./narration/harness.m4a",
+ "duration": 159.0,
+ "lines": [
+  {
+   "chapter": 0,
+   "text": "ハーネスは、なぜ毎日組み直すのか。",
+   "beat": null,
+   "focus": null,
+   "start": 0.0,
+   "end": 3.211
+  },
+  {
+   "chapter": 0,
+   "text": "サッカーの試合にたとえて、見ていきます。",
+   "beat": null,
+   "focus": null,
+   "start": 3.631,
+   "end": 6.863
+  },
+  {
+   "chapter": 1,
+   "text": "左は、ゲーム制作の試合。",
+   "beat": null,
+   "focus": "ゲーム制作",
+   "start": 7.813,
+   "end": 10.522
+  },
+  {
+   "chapter": 1,
+   "text": "右は、アプリ開発の試合。",
+   "beat": null,
+   "focus": "アプリ開発",
+   "start": 10.942,
+   "end": 13.651
+  },
+  {
+   "chapter": 1,
+   "text": "走っている選手は、AIのモデルです。",
+   "beat": null,
+   "focus": "選手＝モデル",
+   "start": 14.071,
+   "end": 17.293
+  },
+  {
+   "chapter": 1,
+   "text": "奥にあるのが作戦ボード。CLAUDE.md、メモリ、スキル、フックを書く場所です。",
+   "beat": "clubhouse",
+   "focus": "作戦ボード",
+   "start": 17.713,
+   "end": 25.553
+  },
+  {
+   "chapter": 1,
+   "text": "ボードは一枚。だから、両方の試合に、同じ作戦が効きます。",
+   "beat": "links",
+   "focus": "作戦ボード",
+   "start": 25.973,
+   "end": 31.765
+  },
+  {
+   "chapter": 2,
+   "text": "アプリ開発で、確かめずに進めて、失点しました。",
+   "beat": "concede",
+   "focus": "失点",
+   "start": 32.715,
+   "end": 37.611
+  },
+  {
+   "chapter": 2,
+   "text": "そこで、ボードに確認のルールを足します。",
+   "beat": "rule-check",
+   "focus": "＋確認のルール",
+   "start": 38.031,
+   "end": 41.252
+  },
+  {
+   "chapter": 2,
+   "text": "右では、相手を止めて、守れました。",
+   "beat": null,
+   "focus": "守れた",
+   "start": 41.672,
+   "end": 45.512
+  },
+  {
+   "chapter": 2,
+   "text": "でも左では、確認待ちで止まり、攻めきれません。",
+   "beat": null,
+   "focus": "攻めきれない",
+   "start": 45.932,
+   "end": 50.572
+  },
+  {
+   "chapter": 2,
+   "text": "今度は、止まるなのルールを足します。",
+   "beat": "rule-go",
+   "focus": "＋止まるなのルール",
+   "start": 50.992,
+   "end": 53.744
+  },
+  {
+   "chapter": 2,
+   "text": "左は得点。右は、カウンターで失点。",
+   "beat": null,
+   "focus": "得点",
+   "start": 54.164,
+   "end": 58.367
+  },
+  {
+   "chapter": 2,
+   "text": "ルールそのものに、良い悪いはない。どの試合かで決まる。",
+   "beat": "verdict",
+   "focus": null,
+   "start": 58.787,
+   "end": 63.224
+  },
+  {
+   "chapter": 3,
+   "text": "それなら、両方に効くルールを、全部足せばいい。",
+   "beat": "pile",
+   "focus": null,
+   "start": 64.174,
+   "end": 68.494
+  },
+  {
+   "chapter": 3,
+   "text": "気づけば、最大公倍数。",
+   "beat": null,
+   "focus": "最大公倍数",
+   "start": 68.914,
+   "end": 71.57
+  },
+  {
+   "chapter": 3,
+   "text": "攻撃的にしようとして、8-1-1。",
+   "beat": "811",
+   "focus": "8-1-1",
+   "start": 71.99,
+   "end": 77.046
+  },
+  {
+   "chapter": 3,
+   "text": "両方の試合で、失点します。",
+   "beat": null,
+   "focus": "失点",
+   "start": 77.466,
+   "end": 80.357
+  },
+  {
+   "chapter": 3,
+   "text": "燃費がよくて、速い車のようなハーネスは幻想。",
+   "beat": null,
+   "focus": null,
+   "start": 80.777,
+   "end": 84.627
+  },
+  {
+   "chapter": 4,
+   "text": "だから、ボードを試合ごとに分けます。",
+   "beat": "split",
+   "focus": null,
+   "start": 85.577,
+   "end": 88.489
+  },
+  {
+   "chapter": 4,
+   "text": "ゲーム制作は、4-3-3と、止まるな。",
+   "beat": null,
+   "focus": "ゲーム制作のボード",
+   "start": 88.909,
+   "end": 94.243
+  },
+  {
+   "chapter": 4,
+   "text": "アプリ開発は、5-4-1と、確認。",
+   "beat": null,
+   "focus": "アプリ開発のボード",
+   "start": 94.663,
+   "end": 99.975
+  },
+  {
+   "chapter": 4,
+   "text": "左は得点。右は守れた。",
+   "beat": null,
+   "focus": null,
+   "start": 100.395,
+   "end": 103.125
+  },
+  {
+   "chapter": 4,
+   "text": "とある案件（試合）で最適なハーネスは、他の試合で最適とはかぎらない。",
+   "beat": null,
+   "focus": null,
+   "start": 103.545,
+   "end": 109.529
+  },
+  {
+   "chapter": 5,
+   "text": "足もとのスタジアムは、公式のハーネス。Claude Codeそのものです。",
+   "beat": "stadium",
+   "focus": "スタジアム＝公式のハーネス",
+   "start": 110.479,
+   "end": 116.527
+  },
+  {
+   "chapter": 5,
+   "text": "自分では書き換えられない、この世のことわりです。",
+   "beat": null,
+   "focus": null,
+   "start": 116.947,
+   "end": 120.531
+  },
+  {
+   "chapter": 5,
+   "text": "回せるのは、用意されたツマミだけ。",
+   "beat": "knobs",
+   "focus": null,
+   "start": 120.951,
+   "end": 123.97
+  },
+  {
+   "chapter": 5,
+   "text": "モデル、考える深さ、許可、道具。",
+   "beat": "knob-sequence",
+   "focus": null,
+   "start": 124.39,
+   "end": 128.881
+  },
+  {
+   "chapter": 6,
+   "text": "書いても守られないことには、審判を置きます。",
+   "beat": "referee",
+   "focus": "審判＝フック",
+   "start": 129.831,
+   "end": 133.244
+  },
+  {
+   "chapter": 6,
+   "text": "ルールを破りそうになると、笛を吹く。",
+   "beat": "whistle",
+   "focus": null,
+   "start": 133.664,
+   "end": 136.843
+  },
+  {
+   "chapter": 6,
+   "text": "笛が増えすぎると、試合が止まる。",
+   "beat": "whistles",
+   "focus": "試合が止まる",
+   "start": 137.263,
+   "end": 140.281
+  },
+  {
+   "chapter": 6,
+   "text": "笛の加減は、人が決める。",
+   "beat": null,
+   "focus": "笛の加減は、人が決める",
+   "start": 140.701,
+   "end": 143.208
+  },
+  {
+   "chapter": 7,
+   "text": "明日は、相手が変わります。",
+   "beat": "rivals",
+   "focus": null,
+   "start": 144.158,
+   "end": 146.739
+  },
+  {
+   "chapter": 7,
+   "text": "公式のハーネスも更新され、選手も成長します。",
+   "beat": "update",
+   "focus": "更新",
+   "start": 147.159,
+   "end": 151.181
+  },
+  {
+   "chapter": 7,
+   "text": "だから、ハーネスは毎日組み直す。",
+   "beat": "loop",
+   "focus": null,
+   "start": 151.601,
+   "end": 154.705
+  },
+  {
+   "chapter": 7,
+   "text": "ツマミを回すことと、ボードを書き直すこと。",
+   "beat": null,
+   "focus": null,
+   "start": 155.125,
+   "end": 158.549
+  }
+ ]
+}

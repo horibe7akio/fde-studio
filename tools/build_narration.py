@@ -15,6 +15,7 @@ Usage:
   python3 tools/build_narration.py              # synthesize everything
   python3 tools/build_narration.py --dry-run    # print the script and the timing estimate
   python3 tools/build_narration.py --only 3 6   # re-render just these chapters, keep the rest
+  python3 tools/build_narration.py --page harness   # the harness page (public/narration/harness.*)
 
 Requires a running VOICEVOX engine (default http://127.0.0.1:50021, override with
 VOICEVOX_ENGINE) and ffmpeg on PATH.
@@ -104,6 +105,65 @@ SCRIPT = [
 ]
 
 
+# The harness page. A fifth element is what the voice says when the caption cannot be read
+# aloud as written (numbers like 8-1-1, Latin names, a bracketed aside).
+# (chapter, caption, beat, focus[, spoken])
+HARNESS = [
+    (0, "ハーネスは、なぜ毎日組み直すのか。", None, None),
+    (0, "サッカーの試合にたとえて、見ていきます。", None, None),
+
+    (1, "左は、ゲーム制作の試合。", None, "ゲーム制作"),
+    (1, "右は、アプリ開発の試合。", None, "アプリ開発"),
+    (1, "走っている選手は、AIのモデルです。", None, "選手＝モデル", "走っている選手は、エーアイのモデルです。"),
+    (1, "奥にあるのが作戦ボード。CLAUDE.md、メモリ、スキル、フックを書く場所です。", "clubhouse", "作戦ボード",
+     "奥にあるのが作戦ボード。クロード・エムディー、メモリ、スキル、フックを書く場所です。"),
+    (1, "ボードは一枚。だから、両方の試合に、同じ作戦が効きます。", "links", "作戦ボード"),
+
+    (2, "アプリ開発で、確かめずに進めて、失点しました。", "concede", "失点"),
+    (2, "そこで、ボードに確認のルールを足します。", "rule-check", "＋確認のルール"),
+    (2, "右では、相手を止めて、守れました。", None, "守れた"),
+    (2, "でも左では、確認待ちで止まり、攻めきれません。", None, "攻めきれない"),
+    (2, "今度は、止まるなのルールを足します。", "rule-go", "＋止まるなのルール"),
+    (2, "左は得点。右は、カウンターで失点。", None, "得点"),
+    (2, "ルールそのものに、良い悪いはない。どの試合かで決まる。", "verdict", None),
+
+    (3, "それなら、両方に効くルールを、全部足せばいい。", "pile", None),
+    (3, "気づけば、最大公倍数。", None, "最大公倍数"),
+    (3, "攻撃的にしようとして、8-1-1。", "811", "8-1-1", "攻撃的にしようとして、はち、いち、いち。"),
+    (3, "両方の試合で、失点します。", None, "失点"),
+    (3, "燃費がよくて、速い車のようなハーネスは幻想。", None, None),
+
+    (4, "だから、ボードを試合ごとに分けます。", "split", None),
+    (4, "ゲーム制作は、4-3-3と、止まるな。", None, "ゲーム制作のボード", "ゲーム制作は、よん、さん、さんと、止まるな。"),
+    (4, "アプリ開発は、5-4-1と、確認。", None, "アプリ開発のボード", "アプリ開発は、ご、よん、いちと、確認。"),
+    (4, "左は得点。右は守れた。", None, None),
+    (4, "とある案件（試合）で最適なハーネスは、他の試合で最適とはかぎらない。", None, None,
+     "とある案件、試合で最適なハーネスは、他の試合で最適とはかぎらない。"),
+
+    (5, "足もとのスタジアムは、公式のハーネス。Claude Codeそのものです。", "stadium", "スタジアム＝公式のハーネス",
+     "足もとのスタジアムは、公式のハーネス。クロード・コードそのものです。"),
+    (5, "自分では書き換えられない、この世のことわりです。", None, None),
+    (5, "回せるのは、用意されたツマミだけ。", "knobs", None),
+    (5, "モデル、考える深さ、許可、道具。", "knob-sequence", None),
+
+    (6, "書いても守られないことには、審判を置きます。", "referee", "審判＝フック"),
+    (6, "ルールを破りそうになると、笛を吹く。", "whistle", None),
+    (6, "笛が増えすぎると、試合が止まる。", "whistles", "試合が止まる"),
+    (6, "笛の加減は、人が決める。", None, "笛の加減は、人が決める"),
+
+    (7, "明日は、相手が変わります。", "rivals", None),
+    (7, "公式のハーネスも更新され、選手も成長します。", "update", "更新"),
+    (7, "だから、ハーネスは毎日組み直す。", "loop", None),
+    (7, "ツマミを回すことと、ボードを書き直すこと。", None, None),
+]
+
+# page -> (script, output name, per-line cache)
+PAGES = {
+    "fde": (SCRIPT, "narration", CACHE_DIR),
+    "harness": (HARNESS, "harness", ROOT / "output" / "narration_lines_harness"),
+}
+
+
 def synthesize(text, path):
     query_url = f"{ENGINE}/audio_query?{urllib.parse.urlencode({'text': text, 'speaker': SPEAKER})}"
     with urllib.request.urlopen(urllib.request.Request(query_url, method="POST"), timeout=30) as response:
@@ -131,13 +191,16 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--dry-run", action="store_true")
     parser.add_argument("--only", nargs="*", type=int, help="chapters to re-render (default: all)")
+    parser.add_argument("--page", choices=sorted(PAGES), default="fde")
     args = parser.parse_args()
+    script, name, cache_dir = PAGES[args.page]
+    rows = [(row[0], row[1], row[2], row[3], row[4] if len(row) > 4 else row[1]) for row in script]
 
     if args.dry_run:
-        for chapter, text, beat, focus in SCRIPT:
-            print(f"{chapter}  {text}   [beat={beat} focus={focus}]")
-        moras = sum(len(text) for _, text, _, _ in SCRIPT)
-        print(f"\n{len(SCRIPT)} lines, {moras} characters, roughly {moras / 7.4 + len(SCRIPT) * GAP_LINE:.0f}s")
+        for chapter, text, beat, focus, spoken in rows:
+            print(f"{chapter}  {text}   [beat={beat} focus={focus}]" + (f"  say={spoken}" if spoken != text else ""))
+        moras = sum(len(spoken) for *_, spoken in rows)
+        print(f"\n{len(rows)} lines, {moras} characters, roughly {moras / 7.4 + len(rows) * GAP_LINE:.0f}s")
         return
 
     for tool in ("ffmpeg", "ffprobe"):
@@ -148,17 +211,17 @@ def main():
     work = pathlib.Path(tempfile.mkdtemp(prefix="narration-"))
     lines, concat, cursor = [], [], 0.0
 
-    for index, (chapter, text, beat, focus) in enumerate(SCRIPT):
+    for index, (chapter, text, beat, focus, spoken) in enumerate(rows):
         wav = work / f"{index:03d}.wav"
         if args.only and chapter not in args.only:
-            cached = CACHE_DIR / f"{index:03d}.wav"
+            cached = cache_dir / f"{index:03d}.wav"
             if cached.exists():
                 shutil.copy(cached, wav)
         if not wav.exists():
-            synthesize(text, wav)
+            synthesize(spoken, wav)
             print(f"  synthesized {index:03d} ch{chapter} {text[:28]}")
         seconds = duration(wav)
-        gap = GAP_CHAPTER if index + 1 < len(SCRIPT) and SCRIPT[index + 1][0] != chapter else GAP_LINE
+        gap = GAP_CHAPTER if index + 1 < len(rows) and rows[index + 1][0] != chapter else GAP_LINE
         lines.append({
             "chapter": chapter, "text": text, "beat": beat, "focus": focus,
             "start": round(cursor, 3), "end": round(cursor + seconds, 3),
@@ -167,7 +230,7 @@ def main():
         cursor += seconds + gap
 
     # Keep the per-line wavs so --only can re-render one chapter without touching the others.
-    cache = CACHE_DIR
+    cache = cache_dir
     cache.mkdir(parents=True, exist_ok=True)
     for index, (wav, _) in enumerate(concat):
         shutil.copy(wav, cache / f"{index:03d}.wav")
@@ -186,15 +249,15 @@ def main():
         entries.append(f"file '{gap_file}'")
     list_file.write_text("\n".join(entries))
 
-    output = OUT_DIR / "narration.m4a"
+    output = OUT_DIR / f"{name}.m4a"
     subprocess.run([
         "ffmpeg", "-y", "-f", "concat", "-safe", "0", "-i", str(list_file),
         "-af", "loudnorm=I=-18:TP=-2:LRA=11", "-ar", "44100", "-c:a", "aac", "-b:a", "96k", str(output),
     ], capture_output=True, check=True)
 
-    (OUT_DIR / "narration.json").write_text(json.dumps({
+    (OUT_DIR / f"{name}.json").write_text(json.dumps({
         "engine": "VOICEVOX", "speaker": "離途・シリアス", "speakerId": SPEAKER,
-        "credit": "VOICEVOX:離途", "audio": "./narration/narration.m4a",
+        "credit": "VOICEVOX:離途", "audio": f"./narration/{name}.m4a",
         "duration": round(duration(output), 3), "lines": lines,
     }, ensure_ascii=False, indent=1))
 

@@ -10,128 +10,92 @@
 </head>
 <body>
 <header class="series-bar"><a class="series" href="../">3Dでわかる <span>/</span> ハーネス</a><a class="here" href="../">シリーズ一覧</a></header>
-<div class="stage" aria-hidden="true"><canvas id="stage"></canvas><div class="tags" id="tags"></div></div>
-<nav class="nav" aria-label="章">
-  <a href="#c1">3つの層</a><a href="#c2">ことわり</a><a href="#c3">変わる</a><a href="#c4">ボード</a>
-  <a href="#c5">2つの試合</a><a href="#c6">8-1-1</a><a href="#c7">審判</a><a href="#c8">まとめ</a>
-</nav>
+<div class="stage" aria-hidden="true"><canvas id="stage"></canvas><div class="tags" id="tags"></div><p class="caption" id="caption"></p></div>
+<nav class="day-nav" aria-label="1日の回し方"><span class="nav-heading">1日の回し方</span><a href="#c0" data-day="see">試合を見る</a><i>→</i><a href="#c2" data-day="write">ボードを書く</a><i>→</i><a href="#c5" data-day="turn">ツマミを回す</a><i>→</i><a href="#c6" data-day="ref">審判を置く</a><i>→</i><a href="#c7" data-day="next">翌日</a></nav>
+<nav class="layer-nav" aria-label="見ている層"><span class="nav-heading">見ている層</span><a href="#c1" data-layer="pitch"><i></i>ピッチ<small>試合</small></a><a href="#c2" data-layer="board"><i></i>作戦ボード<small>自分で書く</small></a><a href="#c5" data-layer="knob"><i></i>ツマミ<small>回せる</small></a><a href="#c5" data-layer="stadium"><i></i>スタジアム<small>変えられない</small></a></nav>
 <main>
   <section class="chapter hero" id="c0" data-ch="0">
     <div class="copy">
       <p class="eyebrow"><i></i>3Dでわかる / ハーネス</p>
       <h1><span class="ph">ハーネスは、</span><span class="ph">なぜ</span><br><span class="ph"><em>毎日</em>組み直すのか。</span></h1>
-      <p class="lead">AIに仕事を頼むとき、自分では変えられないものと、自分で書くものがあります。その違いを、サッカーの作戦ボードで見ていきます。</p>
-      <p class="lead">先に結論を書くと、とある試合で最適なハーネスは、他の試合で最適とはかぎらない、ということです。</p>
+      <p class="lead">サッカーの試合にたとえて、見ていきます。</p>
+      <div class="hero-actions"><button class="play" id="play" type="button"><span>▷</span> 映像として見る<small id="play-note">音声つき</small></button></div>
       <div class="scroll-mark"><i></i>SCROLL</div>
     </div>
   </section>
 
   <section class="chapter" id="c1" data-ch="1">
     <div class="copy">
-      <p class="eyebrow"><i></i>01 / 3つの層</p>
-      <h2>選手、ルール、<em>作戦ボード。</em></h2>
-      <p class="lead">AIの仕事は、3つの層でできています。</p>
-      <ul class="layers">
-        <li class="k-model"><b>選手</b><span>モデル（Claude）。できるのは、次に何をするかを文字で答えることだけです。</span></li>
-        <li class="k-rule"><b>ルールとスタジアム</b><span>公式の言うハーネス（Claude Code そのもの）。選手の答えを受けて、ファイルを読む、書く、コマンドを打つ、を実際にやる仕組みです。</span></li>
-        <li class="k-board"><b>作戦ボード</b><span>クラブハウスで自分で書く設定。CLAUDE.md、メモリ、スキル、フックです。試合の前に、選手に渡されます。</span></li>
-      </ul>
+      <p class="eyebrow"><i></i>01 / 同じボードで、2つの試合</p>
+      <h2>ボードは<em>一枚</em>。<br>試合は、<em>二つ</em>。</h2>
+      <p class="lead">左は、ゲーム制作の試合。右は、アプリ開発の試合。走っている選手は、AIのモデルです。</p>
+      <p class="lead">奥にあるのが作戦ボード。クラブハウスで、<b>CLAUDE.md、メモリ、スキル、フック</b>を書く場所です。</p>
+      <p class="lead">ボードは一枚。だから、両方の試合に、同じ作戦が効きます。</p>
     </div>
   </section>
 
-  <section class="chapter" id="c2" data-ch="2">
+  <section class="chapter tall" id="c2" data-ch="2">
     <div class="copy">
-      <p class="eyebrow"><i></i>02 / この世のことわり</p>
-      <h2>公式のハーネスは、<span class="off">書き換えられない。</span></h2>
-      <p class="lead">AIを動かす仕組み、使える道具、会話の中で何を覚えておくかの管理、安全のための歯止め。作っているのはAnthropicで、使う側には書き換えられません。サッカーでいえば、競技のルールそのものです。</p>
-      <p class="lead">回せるのは、用意されたツマミだけです。</p>
-      <ul class="knobs"><li>モデル</li><li>考える深さ</li><li>許可</li><li>道具</li></ul>
-      <p class="note">Anthropicの説明では、ハーネスは「モデルの周りのソフトウェア一式。ループ、道具、文脈の管理、ガードレール」です。</p>
+      <p class="eyebrow"><i></i>02 / ルールを1つ足す</p>
+      <h2><span class="ph">同じルールが、</span><span class="ph"><em>助け</em>にも、</span><span class="ph"><span class="bad">足かせ</span>にもなる。</span></h2>
+      <p class="lead">アプリ開発で、確かめずに進めて、失点しました。そこで、ボードに<b>確認のルール</b>を足します。</p>
+      <p class="lead">右では、相手を止めて、守れました。でも左では、確認待ちで止まり、攻めきれません。</p>
+      <p class="lead">今度は、<b>止まるなのルール</b>を足します。左は得点。右は、カウンターで失点。</p>
+      <p class="punch"><span class="ph">ルールそのものに、</span><span class="ph">良い悪いはない。</span><em><span class="ph">どの試合かで決まる。</span></em></p>
     </div>
   </section>
 
   <section class="chapter" id="c3" data-ch="3">
     <div class="copy">
-      <p class="eyebrow"><i></i>03 / ことわりも変わる</p>
-      <h2>ルールは、<span class="off">向こうから変わる。</span></h2>
-      <p class="lead">Anthropicの更新で、ときどきルールが変わります。サッカーにVARが入ったように、Claude Code には v2.1.283 で「/doctor prompt-audit」が入りました。CLAUDE.md やスキルの中から、古いモデル向けの書き方や、食い違う指示を探す検査です。</p>
-      <p class="lead">選手も成長します。新しいモデルになると、弱点を補うために書いていた細かい指示が要らなくなり、残しておくと、かえって足を引っぱります。</p>
-      <p class="note">Anthropicは、モデルが一段よくなるたびに、ハーネスに込めた前提を試し直すように、と書いています。</p>
+      <p class="eyebrow"><i></i>03 / 最大公倍数</p>
+      <h2><span class="ph">攻撃的に</span><span class="ph">しようとして、</span><span class="ph"><em>8-1-1</em>。</span></h2>
+      <p class="lead">それなら、両方に効くルールを、全部足せばいい。気づけば、<b>最大公倍数</b>。</p>
+      <p class="lead">両方の試合で、失点します。</p>
+      <p class="punch"><span class="ph">燃費がよくて、</span><span class="ph">速い車のような</span><span class="ph">ハーネスは<em>幻想</em>。</span></p>
+      <p class="note">公式の目安は、CLAUDE.md 1ファイルにつき200行以内。長いほど守られにくくなり、矛盾するルールはどちらかを勝手に選ぶことがある、とあります。</p>
     </div>
   </section>
 
   <section class="chapter" id="c4" data-ch="4">
     <div class="copy">
-      <p class="eyebrow"><i></i>04 / 作戦ボードは2種類</p>
-      <h2><span class="ph">全部の試合で</span><span class="ph">読むボードと、</span><em><span class="ph">案件ごとの</span><span class="ph">ボード。</span></em></h2>
-      <p class="lead">自分で書く作戦ボードには、全部の試合で読む共通の1枚（全体用の CLAUDE.md）と、その案件の試合だけで読むボード（案件ごとの CLAUDE.md）があります。</p>
-      <p class="lead">公式には、ファイルの種類ごとに効くルールや、必要なときだけ読むスキルもあります。効く範囲を絞るための仕組みです。</p>
+      <p class="eyebrow"><i></i>04 / ボードを分ける</p>
+      <h2>ボードを、<br><em>試合ごと</em>に分ける。</h2>
+      <p class="lead">ゲーム制作は、4-3-3と、止まるな。アプリ開発は、5-4-1と、確認。</p>
+      <p class="lead">左は得点。右は守れた。</p>
+      <p class="punch"><span class="ph">とある案件（試合）で</span><span class="ph">最適なハーネスは、</span><em><span class="ph">他の試合で</span><span class="ph">最適とはかぎらない。</span></em></p>
     </div>
   </section>
 
-  <section class="chapter steps" id="c5" data-ch="5">
+  <section class="chapter" id="c5" data-ch="5">
     <div class="copy">
-      <div class="beat">
-        <p class="eyebrow"><i></i>05 / 1枚のボードで、2つの試合</p>
-        <h2><span class="ph">同じルールが、</span><span class="ph"><em>助け</em>にも、</span><span class="ph"><span class="bad">足かせ</span>にもなる。</span></h2>
-        <p class="lead">ゲーム制作と、アプリ開発。2つの試合を、共通の作戦ボード1枚で戦うとします。アプリ開発の試合で、確かめずに進めて失点しました。</p>
-      </div>
-      <div class="beat">
-        <p class="lead">そこで<b>「作業の前に確認する」</b>を足します。アプリ開発は、守れるようになりました。</p>
-        <p class="lead">でもゲーム制作では、選手が一手ごとにベンチを振り返り、攻めきれません。</p>
-      </div>
-      <div class="beat">
-        <p class="lead">今度は<b>「止まるな」</b>を足します。ゲーム制作は、点を取れるようになりました。</p>
-        <p class="lead">でもアプリ開発では、確かめずに前へ出て、カウンターで失点します。</p>
-      </div>
-      <div class="beat">
-        <p class="lead">ボードは1枚なので、片方の試合のために足したルールは、もう片方の試合にも効いてしまいます。</p>
-        <p class="punch"><span class="ph">ルールそのものに、</span><span class="ph">良い悪いはない。</span><em><span class="ph">どの試合かで決まる。</span></em></p>
-      </div>
+      <p class="eyebrow"><i></i>05 / 変えられない地面と、4つのツマミ</p>
+      <h2>足もとは、<br><span class="off">変えられない</span>。</h2>
+      <p class="lead">足もとのスタジアムは、公式のハーネス。Claude Codeそのものです。自分では書き換えられない、この世のことわりです。</p>
+      <p class="lead">回せるのは、用意されたツマミだけ。</p>
+      <ul class="knobs"><li>モデル</li><li>考える深さ</li><li>許可</li><li>道具</li></ul>
     </div>
   </section>
 
-  <section class="chapter steps" id="c6" data-ch="6">
+  <section class="chapter" id="c6" data-ch="6">
     <div class="copy">
-      <div class="beat">
-        <p class="eyebrow"><i></i>06 / 困るたびに足す</p>
-        <h2><span class="ph">攻撃的に</span><span class="ph">しようとして、</span><span class="ph"><em>8-1-1</em>にはしない。</span></h2>
-        <p class="lead">困ったことが起きるたびに、作戦を足していく。足しているときは、どれも正しいんです。でも、共通のボードに足し続けると、全部の案件の注意書きを足し合わせた、最大公倍数のようなハーネスに膨らみます。</p>
-        <p class="note">公式の目安は、CLAUDE.md 1ファイルにつき200行以内。長いほど守られにくくなり、矛盾するルールはどちらかを勝手に選ぶことがある、とあります。</p>
-      </div>
-      <div class="beat">
-        <p class="lead">サッカーなら、誰もそんなフォーメーションにはしません。けど、ハーネスは、そういうことをしようとしてしまうんです。</p>
-        <p class="lead">付箋だらけのボードで戦うと、どちらの試合でも負けます。ピッチに立てるのは11人だけ。AIが一度に気にかけられることにも、限りがあります。</p>
-      </div>
-      <div class="beat">
-        <p class="punch"><span class="ph">とある試合で</span><span class="ph">最適なハーネスは、</span><em><span class="ph">他の試合で</span><span class="ph">最適とはかぎらない。</span></em></p>
-        <p class="lead">だから、ボードを試合ごとに分けます。ゲーム制作には4-3-3と「止まるな」。アプリ開発には5-4-1と「作業の前に確認する」。</p>
-      </div>
-      <div class="beat">
-        <p class="lead">同じルールが、今度はどちらの試合でも助けになります。共通のボードに残すのは、どの試合にも効くことだけです。</p>
-      </div>
-    </div>
-  </section>
-
-  <section class="chapter tall" id="c7" data-ch="7">
-    <div class="copy">
-      <p class="eyebrow"><i></i>07 / 審判</p>
-      <h2><span class="ph">書いても</span><span class="ph">守られないことは、</span><em><span class="ph">審判を置く。</span></em></h2>
-      <p class="lead">作戦ボードに書くだけでは、守られないことがあります。そこで、AIの行動を途中で止める仕掛け（フック）を置きます。サッカーでいえば審判です。</p>
-      <p class="lead">ただし、何でも笛を吹く審判だと、試合が止まります。どこまで笛を吹くかは、人が決めます。</p>
+      <p class="eyebrow"><i></i>06 / 審判</p>
+      <h2><span class="ph">書いても</span><span class="ph">守られないことには、</span><em><span class="ph">審判を置く。</span></em></h2>
+      <p class="lead">フックは、ルールを破りそうになると、笛を吹きます。笛が増えすぎると、試合が止まる。</p>
+      <p class="lead">笛の加減は、人が決める。</p>
       <p class="note">公式にも、CLAUDE.md は強制ではなく文脈として扱われるので、必ず止めたいときはフックを使うように、とあります。</p>
     </div>
   </section>
 
-  <section class="chapter" id="c8" data-ch="8">
+  <section class="chapter" id="c7" data-ch="7">
     <div class="copy">
-      <p class="eyebrow"><i></i>08 / まとめ</p>
-      <h2><span class="ph">変えられない</span><span class="ph">ルールの上で、</span><em><span class="ph">作戦を</span><span class="ph">組み直す。</span></em></h2>
-      <p class="lead">ルールとスタジアムは、Anthropicが作り、ときどき変えます。こちらにできるのは、ツマミを回すことと、作戦ボードを書き直すことです。</p>
-      <p class="lead">毎日の調整は、ルールを増やす作業ではなく、増えた作戦の効く範囲を絞る作業です。</p>
+      <p class="eyebrow"><i></i>07 / 明日は、相手が変わる</p>
+      <h2><span class="ph">だから、</span><span class="ph">ハーネスは</span><em><span class="ph">毎日組み直す。</span></em></h2>
+      <p class="lead">明日は、相手が変わります。公式のハーネスも更新され、選手も成長します。</p>
+      <p class="lead">ツマミを回すことと、ボードを書き直すこと。</p>
     </div>
   </section>
 </main>
+<button class="stop-play" id="stop-play" type="button" hidden>■ 映像を止める</button>
 <section class="compare-wrap" aria-labelledby="cmp">
   <p class="eyebrow" id="cmp"><i></i>公式のハーネスと、自分の作戦ボード</p>
   <div class="table-scroll">
@@ -162,6 +126,7 @@
     <li><a href="https://code.claude.com/docs/en/hooks-guide" target="_blank" rel="noopener"><span>Claude Code Docs「Automate actions with hooks」</span><span>hooks</span></a></li>
     <li><a href="https://github.com/anthropics/claude-code/blob/main/CHANGELOG.md" target="_blank" rel="noopener"><span>Claude Code CHANGELOG</span><span>v2.1.283</span></a></li>
   </ol>
+  <p class="credit">ナレーション音声 VOICEVOX:離途</p>
 </section>
 
 <div class="progress" aria-hidden="true"><i id="bar"></i></div>
