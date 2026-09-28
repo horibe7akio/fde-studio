@@ -99,14 +99,15 @@ document.fonts.ready.then(measure);
 // picture never describe different things.
 
 const chapterSpan=new Map();
-fetch('./narration/narration.json').then(response=>response.ok?response.json():null).then(data=>{
+const narrationBase=new URL('../narration/',location.href);
+fetch(new URL('narration.json',narrationBase)).then(response=>response.ok?response.json():null).then(data=>{
   if(!data)return;
   narration=data;
   data.lines.forEach(line=>{
     const span=chapterSpan.get(line.chapter)||{start:line.start,end:line.end};
     span.end=line.end;chapterSpan.set(line.chapter,span);
   });
-  narrationAudio=new Audio(data.audio);
+  narrationAudio=new Audio(new URL(data.audio.split('/').pop(),narrationBase).href);
   narrationAudio.preload='metadata';
   narrationAudio.hidden=true;document.body.append(narrationAudio);
   narrationAudio.addEventListener('ended',()=>stop());
