@@ -723,8 +723,8 @@ function update() {
   dayLinks.forEach(a => a.classList.toggle('on', a.dataset.day === day));
   layerLinks.forEach(a => a.classList.toggle('on', a.dataset.layer === layer));
   dayNav.classList.toggle('loop', g >= p(7, 2) && !done);
-  dayNav.classList.toggle('gone', done); layerNav.classList.toggle('gone', done);
-  stageEl.classList.toggle('off', done && mobile);
+  // the explainer page sets these itself; toggling them here too restarts their fade every frame
+  if (!EXPLAIN_PAGE) { dayNav.classList.toggle('gone', done); layerNav.classList.toggle('gone', done); stageEl.classList.toggle('off', done && mobile); }
   document.documentElement.dataset.chapter = String(Math.min(Math.floor(g), CHAPTERS - 1));
   document.documentElement.dataset.rendered = 'true';
   const max = document.documentElement.scrollHeight - innerHeight;
@@ -807,7 +807,7 @@ if (EXPLAIN) {
   tagLayer.style.display = 'none';
   const ex = document.createElement('div'); ex.id = 'ex';
   ex.innerHTML = '<div class="ex-labels"></div><div class="ex-q">？</div><div class="ex-cal"><i>月</i><i>火</i><i>水</i></div>'
-    + '<p class="ex-cap"></p><div class="ex-dip"></div><div class="ex-end"><p>3Dでわかる</p><h1>ハーネス</h1><span>サッカーで見る、AIの作戦ボード</span></div>';
+    + '<div class="ex-mapwrap"></div><p class="ex-cap"></p><div class="ex-dip"></div><div class="ex-end"><p>3Dでわかる</p><h1>ハーネス</h1><span>サッカーで見る、AIの作戦ボード</span></div>';
   document.body.append(ex);
   const $ = sel => ex.querySelector(sel);
   const chipEl = cls => { const e = document.createElement('div'); e.className = 'ex-chip ' + cls; $('.ex-labels').append(e); return e; };
@@ -847,6 +847,112 @@ if (EXPLAIN) {
     boards: shot({ az: 0, el: 0.5, d: 30, tx: 0, ty: 2.5, tz: -4, blur: 0.9 }),
     wide: shot({ az: 0.3, el: 0.7, d: 48, tx: 0, tz: 0, blur: 0.5 }),
   };
+  const TOP = shot({ az: 0, el: 1.36, d: 46, tx: 0, tz: -2, blur: 0.3 });
+  const SVGNS = 'http://www.w3.org/2000/svg';
+  const mk = (parent, tag, attrs = {}, text) => { const e = document.createElementNS(SVGNS, tag); for (const k in attrs) e.setAttribute(k, attrs[k]); if (text != null) e.textContent = text; parent.append(e); return e; };
+  const COLS = { input: '#ff7a7a', harness: '#ffa777', model: '#e7edf6', context: '#96e5ff', output: '#ffd84a' };
+  // 横長（動画）と縦長（ページの右側・スマホ）の2つの組み
+  const LAYOUTS = {
+    wide: { vb: [1600, 900], card: [70, 130, 520, 580], flow: { x: 720, w: 820, input: 70, harness: [190, 560], output: 610 } },
+    tall: { vb: [900, 1160], card: [250, 40, 400, 330], flow: { x: 60, w: 780, input: 420, harness: [520, 920], output: 1030 } },
+  };
+  let map = null, mapLayout = '';
+  function buildMap(name) {
+    const Lo = LAYOUTS[name], [vw, vh] = Lo.vb, [cx, cy, cw, ch] = Lo.card, F = Lo.flow;
+    const root = document.createElementNS(SVGNS, 'svg'); root.setAttribute('viewBox', `0 0 ${vw} ${vh}`); root.classList.add('ex-map');
+    const bg = mk(root, 'rect', { x: 0, y: 0, width: vw, height: vh, fill: '#04070d', opacity: 0 });
+    // 左：切り出した作戦図
+    const card = mk(root, 'g');
+    mk(card, 'rect', { x: cx, y: cy, width: cw, height: ch, rx: 14, fill: '#0b1a26', stroke: COLS.harness, 'stroke-width': 4 });
+    mk(card, 'rect', { x: cx + 24, y: cy + 60, width: cw - 48, height: ch - 110, fill: 'none', stroke: '#96e5ff66', 'stroke-width': 2 });
+    mk(card, 'line', { x1: cx + 24, y1: cy + 60 + (ch - 110) / 2, x2: cx + cw - 24, y2: cy + 60 + (ch - 110) / 2, stroke: '#96e5ff44', 'stroke-width': 2 });
+    const fx = u => cx + 24 + u * (cw - 48), fy = v => cy + 60 + v * (ch - 110);
+    const dots = F433.map(() => mk(card, 'circle', { r: Math.max(8, cw / 40), fill: COLS.model }));
+    mk(card, 'circle', { cx: fx(0.5), cy: fy(0.955), r: Math.max(8, cw / 40), fill: 'none', stroke: COLS.context, 'stroke-width': 3 });
+    const tag = (x, y, text, col, anchor = 'middle', size = 26) => mk(root, 'text', { x, y, fill: col, 'font-size': size, 'font-weight': 800, 'text-anchor': anchor, opacity: 0 }, text);
+    const lab = {
+      opp: tag(cx + cw / 2, cy + 44, '相手（その日の試合）', COLS.input),
+      board: tag(cx + cw / 2, cy - 14, '作戦ボード', COLS.context),
+      player: tag(cx + cw - 30, cy + 60 + (ch - 110) / 2 - 12, '選手', COLS.model, 'end'),
+      club: tag(cx + cw / 2, cy + ch + 34, 'クラブとスタジアム', COLS.harness),
+      result: tag(cx + cw / 2, cy + ch - 18, '結果', COLS.output),
+    };
+    // 右：AIの流れ
+    const box = (x, y, w, h, col, title, sub) => {
+      const g2 = mk(root, 'g', { opacity: 0 });
+      mk(g2, 'rect', { x, y, width: w, height: h, rx: 12, fill: '#0a111c', stroke: col, 'stroke-width': 4 });
+      mk(g2, 'text', { x: x + 22, y: y + 44, fill: col, 'font-size': 32, 'font-weight': 900 }, title);
+      const subEl = sub != null ? mk(g2, 'text', { x: x + 22, y: y + 84, fill: '#c9d4e2', 'font-size': 24, 'font-weight': 600 }, sub) : null;
+      return { g: g2, sub: subEl, x, y, w, h };
+    };
+    const [hy0, hy1] = F.harness;
+    const B = {
+      input: box(F.x, F.input, F.w, 100, COLS.input, 'インプット', '依頼・案件「このバグを直して」'),
+      harness: box(F.x, hy0, F.w, hy1 - hy0, COLS.harness, 'ハーネス（Claude Code）', null),
+      context: box(F.x + 24, hy0 + 76, F.w * 0.46, hy1 - hy0 - 100, COLS.context, 'コンテキスト', 'ボードの中身：止まるな'),
+      model: box(F.x + F.w * 0.56, hy0 + 110, F.w * 0.4, 150, COLS.model, '（モデル）', '次の一手を答える'),
+      output: box(F.x, F.output, F.w, 100, COLS.output, 'アウトプット', '仕事の結果：得点'),
+    };
+    ['依頼', '道具の結果', 'これまでの会話'].forEach((x, i) => mk(B.context.g, 'text', { x: B.context.x + 22, y: B.context.y + 128 + i * 36, fill: '#9fb2c8', 'font-size': 22 }, x));
+    const hook = mk(root, 'text', { x: F.x + F.w - 20, y: hy0 + 44, fill: COLS.harness, 'font-size': 22, 'font-weight': 700, 'text-anchor': 'end', opacity: 0 }, '歯止め（フック）');
+    const act = mk(root, 'text', { x: B.model.x + B.model.w / 2, y: hy1 - 36, fill: COLS.harness, 'font-size': 22, 'font-weight': 700, 'text-anchor': 'middle', opacity: 0 }, '↺ 読む・書く・実行');
+    const same = mk(root, 'text', { x: B.model.x + B.model.w / 2, y: B.model.y - 14, fill: COLS.model, 'font-size': 22, 'font-weight': 700, 'text-anchor': 'middle', opacity: 0 }, '同じ選手＝同じモデル');
+    const arrow = mk(root, 'path', { d: `M${B.context.x + B.context.w + 6} ${B.model.y + 75} L${B.model.x - 8} ${B.model.y + 75}`, stroke: COLS.context, 'stroke-width': 4, fill: 'none', 'marker-end': 'url(#ah)', opacity: 0 });
+    const defs = mk(root, 'defs'); const mkr = mk(defs, 'marker', { id: 'ah', viewBox: '0 0 10 10', refX: 8, refY: 5, markerWidth: 6, markerHeight: 6, orient: 'auto' }); mk(mkr, 'path', { d: 'M0 0 L10 5 L0 10 z', fill: COLS.context });
+    const loopDot = mk(root, 'circle', { r: 9, fill: COLS.harness, opacity: 0 });
+    // 左のラベルから右の箱へ伸びる線（同じ色）
+    const link = (from, toBox, col) => {
+      const x1 = +from.getAttribute('x') + (name === 'wide' ? 140 : 0), y1 = +from.getAttribute('y') - 8;
+      const x2 = toBox.x - (name === 'wide' ? 6 : -toBox.w / 2), y2 = name === 'wide' ? toBox.y + 40 : toBox.y - 6;
+      const d = name === 'wide' ? `M${x1} ${y1} C${(x1 + x2) / 2} ${y1} ${(x1 + x2) / 2} ${y2} ${x2} ${y2}` : `M${x1} ${y1 + 12} L${x2} ${y2}`;
+      const path = mk(root, 'path', { d, stroke: col, 'stroke-width': 3, fill: 'none', opacity: 0.9 });
+      const len = path.getTotalLength ? 2000 : 2000; path.setAttribute('stroke-dasharray', len); path.setAttribute('stroke-dashoffset', len);
+      return { path, len };
+    };
+    const links = {
+      input: link(lab.opp, B.input, COLS.input), model: link(lab.player, B.model, COLS.model), harness: link(lab.club, B.harness, COLS.harness),
+      context: link(lab.board, B.context, COLS.context), output: link(lab.result, B.output, COLS.output),
+    };
+    const cardBox = [cx, cy, cw, ch];
+    $('.ex-mapwrap').replaceChildren(root);
+    return { root, bg, card, dots, fx, fy, lab, B, hook, act, same, arrow, loopDot, links, cardBox, name };
+  }
+  function drawMap(t) {
+    const want = MOTION ? 'wide' : 'tall';
+    if (t < 0) { if (map) map.root.style.opacity = '0'; return; }
+    if (!map || mapLayout !== want) { map = buildMap(want); mapLayout = want; }
+    const m = map; m.root.style.opacity = '1';
+    const A = (i, a0 = 0, a1 = 0.35) => ramp(t, T(7, i, a0), T(7, i, a1));
+    m.bg.setAttribute('opacity', String(0.78 * A(0, 0, 0.4)));
+    // 切り出し：画面上のボードの位置から、左のカードへ
+    const k = ease(A(0, 0.05, 0.7));
+    const [cx, cy, cw, ch] = m.cardBox, [vw] = MOTION ? LAYOUTS.wide.vb : LAYOUTS.tall.vb;
+    const sx = vw / 2 - (cx + cw / 2), sy = 20 - cy;
+    m.card.setAttribute('transform', `translate(${(1 - k) * sx} ${(1 - k) * sy}) translate(${cx + cw / 2} ${cy}) scale(${lerp(0.35, 1, k)}) translate(${-(cx + cw / 2)} ${-cy})`);
+    m.card.setAttribute('opacity', String(A(0, 0, 0.2)));
+    const swap = ease(A(5, 0.25, 0.6));
+    const F = F433.map((q, i) => [lerp(q[0], F541[i][0], swap), lerp(q[1], F541[i][1], swap)]);
+    m.dots.forEach((d, i) => { d.setAttribute('cx', m.fx(F[i][0])); d.setAttribute('cy', m.fy(F[i][1])); });
+    const leftOn = A(0, 0.6, 0.9);
+    Object.values(m.lab).forEach(e => e.setAttribute('opacity', String(leftOn)));
+    // 右：語が出る行で、左のラベルから線が伸びて箱になる
+    const grow = (key, a) => { const L2 = m.links[key]; L2.path.setAttribute('stroke-dashoffset', String(L2.len * (1 - ease(a)))); m.B[key].g.setAttribute('opacity', String(ramp(a, 0.6, 1))); };
+    grow('input', A(1, 0, 0.4)); grow('model', A(1, 0.5, 0.9)); grow('harness', A(2, 0, 0.3)); grow('context', A(3, 0, 0.35)); grow('output', A(4, 0, 0.5));
+    m.hook.setAttribute('opacity', String(A(2, 0.4, 0.6)));
+    m.act.setAttribute('opacity', String(A(2, 0.5, 0.7)));
+    m.arrow.setAttribute('opacity', String(A(3, 0.3, 0.5)));
+    // 仕事の輪：モデル → ハーネスが実行 → コンテキストへ戻る、を光の粒が回る
+    const loopOn = A(2, 0.55, 0.7) * (t < T(7, 5) ? 1 : 1 - A(5, 0, 0.15));
+    const B = m.B, ph = ((((t - T(7, 2)) * 0.45) % 1) + 1) % 1;
+    const pts = [[B.model.x + B.model.w / 2, B.model.y + B.model.h], [B.model.x + B.model.w / 2, B.harness.y + B.harness.h - 60], [B.context.x + B.context.w / 2, B.harness.y + B.harness.h - 60], [B.context.x + B.context.w, B.model.y + 75], [B.model.x, B.model.y + 75]];
+    const seg = Math.min(3, Math.floor(ph * 4)), f = ph * 4 - seg;
+    m.loopDot.setAttribute('cx', lerp(pts[seg][0], pts[seg + 1][0], f)); m.loopDot.setAttribute('cy', lerp(pts[seg][1], pts[seg + 1][1], f));
+    m.loopDot.setAttribute('opacity', String(loopOn));
+    // いちばん言いたいこと：左の並びを変えると、コンテキストと結果が変わる。モデルは変わらない
+    B.context.sub.textContent = swap > 0.5 ? 'ボードの中身：確認' : 'ボードの中身：止まるな';
+    B.output.sub.textContent = swap > 0.5 ? '仕事の結果：守れた' : '仕事の結果：得点';
+    m.same.setAttribute('opacity', String(A(5, 0.3, 0.5)));
+  }
   const toward = (a, b, k) => { const o = {}; const e = ease(clamp(k)); for (const key in a) o[key] = lerp(a[key], b[key], e); return o; };
   const lerpG = (a, b, k) => lerp(a, b, clamp(k));
   let st = {};
@@ -871,7 +977,7 @@ if (EXPLAIN) {
   const frame = t => {
     if (!lines.length) return false;
     if (MOTION) { clock = t; frameDt = 1 / 30; intro = 1; }
-    const starts = [0, 1, 2, 3, 4, 5, 6].map(sc => (sc === 0 ? 0 : T(sc, 0) - 0.45));
+    const starts = [0, 1, 2, 3, 4, 5, 6, 7].map(sc => (sc === 0 ? 0 : T(sc, 0) - 0.45));
     const sc = Math.max(0, starts.filter(x => t >= x).length - 1);
     const lab = {};   // chip -> [pos, text, alpha]
     st = { boardOn: true, linksOn: false, hideTeams: false, coach: null, card: null, drops: null, arrows: 0 };
@@ -945,7 +1051,7 @@ if (EXPLAIN) {
       const sa = ramp(t, T(5, 0, 0.6), T(5, 0, 0.75));
       lab.scoreL = [[sideX(0), 0.1, -PL / 2 - 0.9], 'ゲーム制作　<b>1-0</b>　得点', sa];
       lab.scoreR = [[sideX(1), 0.1, -PL / 2 - 0.9], 'アプリ開発　<b>0-0</b>　守れた', sa];
-    } else {
+    } else if (sc === 6) {
       cam = t < T(6, 1) ? CAM.twin : t < T(6, 2) ? toward(CAM.twin, CAM.wide, ramp(t, T(6, 1), T(6, 1, 0.5))) : toward(CAM.wide, CAM.boards, ramp(t, T(6, 2), T(6, 2, 0.5)));
       st.linksOn = true;
       if (t < T(6, 1)) g = lerpG(p(7, 0, 0), p(7, 0, 0.95), ramp(t, starts[6], TE(6, 0)));
@@ -956,7 +1062,13 @@ if (EXPLAIN) {
         st.coach = { pos: [0, 0, -PL / 2 - 0.4], ry: Math.PI, arm: 2.3 + Math.sin(t * 7) * 0.25 };
         lab.coach = [[0, 2.3, -PL / 2 - 0.4], '監督：毎日ボードを書き直す', ramp(t, T(6, 2, 0.2), T(6, 2, 0.4))];
       }
+    } else {
+      // 07：AIの言葉で言うと。3Dは真上から見下ろして暗く沈め、2Dの図を重ねる
+      g = p(4, 3, 0.95);
+      cam = toward(CAM.twin, TOP, ramp(t, starts[7], T(7, 0, 0.5)));
+      st.linksOn = true;
     }
+    drawMap(sc === 7 ? t : -1);
     gOverride = g; camOverride = cam;
     update();
     // 画面の文字（3Dの位置に合わせる）
@@ -977,7 +1089,7 @@ if (EXPLAIN) {
     $('.ex-cap').textContent = capOn ? cur.text : '';
     $('.ex-cap').style.opacity = capOn ? '1' : '0';
     if (MOTION) {
-      const endAt = TE(6, 2) + 0.5;
+      const endAt = TE(7, 5) + 0.8;
       $('.ex-dip').style.opacity = String(0.86 * ramp(t, endAt, endAt + 0.6));
       $('.ex-end').style.opacity = String(ease(ramp(t, endAt + 0.2, endAt + 0.9)));
     } else {
@@ -988,7 +1100,7 @@ if (EXPLAIN) {
       layerLinks.forEach(a => a.classList.toggle('on', a.dataset.layer === layer));
       const done = progress() >= secs.length;
       dayNav.classList.remove('loop');
-      dayNav.classList.toggle('gone', done); layerNav.classList.toggle('gone', done);
+      dayNav.classList.toggle('gone', done); layerNav.classList.toggle('gone', done || sc === 7);
       stageEl.classList.toggle('off', done && mobile);
     }
     return true;
@@ -998,8 +1110,8 @@ if (EXPLAIN) {
   // ページ：スクロールの位置（再生中は声の位置）を、場面の時刻に直す
   let exAudio = null, exPlaying = false;
   const bounds = () => {
-    const starts = [0, 1, 2, 3, 4, 5, 6].map(sc => (sc === 0 ? 0 : T(sc, 0) - 0.45));
-    return starts.map((a, i) => [a, i < 6 ? starts[i + 1] : TE(6, 2) + 1.2]);
+    const starts = [0, 1, 2, 3, 4, 5, 6, 7].map(sc => (sc === 0 ? 0 : T(sc, 0) - 0.45));
+    return starts.map((a, i) => [a, i < 7 ? starts[i + 1] : TE(7, 5) + 1.2]);
   };
   const timeFromScroll = () => {
     const g = Math.min(progress(), secs.length - 0.001), c = Math.floor(g), f = g - c;

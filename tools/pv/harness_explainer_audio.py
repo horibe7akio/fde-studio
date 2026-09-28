@@ -41,6 +41,7 @@ def main():
         beat += 0.5
 
     s0, s1, s2, s3, s4, s5, s6 = (T[k] for k in range(7))
+    s7 = T.get(7, [])
     put(a.whistle(0.5), 0.15, 0.8)                        # kick-off
     put(a.ball(), 2.2, 0.8, pan=-0.3)
     put(a.cheer(1.6), 3.8, 0.55, pan=-0.4)                # left scores
@@ -63,8 +64,14 @@ def main():
     for i in range(3):
         put(a.tick(), s6[0][0] + 0.35 + i * 0.9, 1.0)     # calendar flips
     put(a.whoosh(0.8), s6[1][0] + 0.3, 0.9)               # the update sweeps the stadium
-    put(a.boom(2.0), s6[2][1] + 0.4, 0.6)
-    put(a.whistle(0.9), s6[2][1] + 0.55, 0.85)            # full time
+    for st, _ in s7:
+        put(a.tick(), st + 0.15, 0.9)                     # each box of the AI flow appears
+    if s7:
+        put(a.whoosh(0.8), s7[0][0] + 0.2, 0.9)           # the formation is cut out of the board
+        put(a.boom(1.4), s7[-1][0] + 0.4, 0.35)           # the one sentence
+    last = lines[-1]["end"]
+    put(a.boom(2.0), last + 0.4, 0.6)
+    put(a.whistle(0.9), last + 0.55, 0.85)                # full time
 
     fade = np.minimum(1, (dur - np.arange(a.N) / a.SR) / 1.0)
     m = a.mix * fade[:, None]
