@@ -4,94 +4,77 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#060a13">
-<meta name="description" content="公式のハーネス（Claude Code）と自分で書く作戦ボードの違いを、サッカーのフォーメーションの3Dで見る。">
+<meta name="description" content="同じ選手でも、ボードで結果が変わる。公式のハーネス（Claude Code）と自分で書く作戦ボードを、サッカーの3Dで見る。">
 <title>3Dでわかる ハーネス</title>
 <link rel="icon" href="../favicon.svg">
 </head>
 <body>
 <header class="series-bar"><a class="series" href="../">3Dでわかる <span>/</span> ハーネス</a><a class="here" href="../">シリーズ一覧</a></header>
 <div class="stage" aria-hidden="true"><canvas id="stage"></canvas><div class="tags" id="tags"></div><p class="caption" id="caption"></p></div>
-<nav class="day-nav" aria-label="1日の回し方"><span class="nav-heading">1日の回し方</span><a href="#c0" data-day="see">試合を見る</a><i>→</i><a href="#c2" data-day="write">ボードを書く</a><i>→</i><a href="#c5" data-day="turn">ツマミを回す</a><i>→</i><a href="#c6" data-day="ref">審判を置く</a><i>→</i><a href="#c7" data-day="next">翌日</a></nav>
-<nav class="layer-nav" aria-label="見ている層"><span class="nav-heading">見ている層</span><a href="#c1" data-layer="pitch"><i></i>ピッチ<small>試合</small></a><a href="#c2" data-layer="board"><i></i>作戦ボード<small>自分で書く</small></a><a href="#c5" data-layer="knob"><i></i>ツマミ<small>回せる</small></a><a href="#c5" data-layer="stadium"><i></i>スタジアム<small>変えられない</small></a></nav>
+<nav class="day-nav" aria-label="流れ"><span class="nav-heading">流れ</span><a href="#c1" data-scene="1">選手とクラブ</a><i>→</i><a href="#c2" data-scene="2">最大公倍数</a><i>→</i><a href="#c3" data-scene="3">仕組み</a><i>→</i><a href="#c4" data-scene="4">相手</a><i>→</i><a href="#c5" data-scene="5">分ける</a><i>→</i><a href="#c6" data-scene="6">毎日</a></nav>
+<nav class="layer-nav" aria-label="見ている層"><span class="nav-heading">見ている層</span><a href="#c0" data-layer="pitch"><i></i>ピッチ<small>試合</small></a><a href="#c2" data-layer="board"><i></i>作戦ボード<small>自分で書く</small></a><a href="#c1" data-layer="stadium"><i></i>クラブとスタジアム<small>ハーネス</small></a></nav>
 <main>
   <section class="chapter hero" id="c0" data-ch="0">
     <div class="copy">
       <p class="eyebrow"><i></i>3Dでわかる / ハーネス</p>
-      <h1><span class="ph">ハーネスは、</span><span class="ph">なぜ</span><br><span class="ph"><em>毎日</em>組み直すのか。</span></h1>
-      <p class="lead">サッカーの試合にたとえて、見ていきます。</p>
+      <h1><span class="ph">同じ選手でも、</span><br><span class="ph"><em>ボード</em>で結果が</span><span class="ph">変わる。</span></h1>
+      <p class="lead">同じ選手が、ある試合では勝ち、別の試合では負けます。何が違うのでしょう。サッカーの試合で見ていきます。</p>
       <div class="hero-actions"><button class="play" id="play" type="button"><span>▷</span> 映像として見る<small id="play-note">音声つき</small></button></div>
       <div class="scroll-mark"><i></i>SCROLL</div>
     </div>
   </section>
 
-  <section class="chapter" id="c1" data-ch="1">
+  <section class="chapter tall" id="c1" data-ch="1">
     <div class="copy">
-      <p class="eyebrow"><i></i>01 / 同じボードで、2つの試合</p>
-      <h2>ボードは<em>一枚</em>。<br>試合は、<em>二つ</em>。</h2>
-      <p class="lead">左は、ゲーム制作の試合。右は、アプリ開発の試合。走っている選手は、AIのモデルです。</p>
-      <p class="lead">奥にあるのが作戦ボード。クラブハウスで、<b>CLAUDE.md、メモリ、スキル、フック</b>を書く場所です。</p>
-      <p class="lead">ボードは一枚。だから、両方の試合に、同じ作戦が効きます。</p>
+      <p class="eyebrow"><i></i>01 / 選手と、クラブと、ボード</p>
+      <h2>選手は<em>答える</em>だけ。<br>クラブが<em>手足</em>になる。</h2>
+      <p class="lead"><b>選手＝AIのモデル</b>（Claude Opus 5.5 など）。できるのは、次に何をするかを文字で答えることだけです。自分ではファイルも開けず、コマンドも打てません。</p>
+      <p class="lead"><b>クラブとスタジアム＝公式のハーネス</b>（Claude Code そのもの）。選手が「このファイルを読みたい」と言ったら、本当に読んで結果を返す。ファイルの編集、コマンド、ウェブ検索などの道具を用意し、毎回選手に何を見せるかを決め、長くなったら要約して詰め、「実行してよいか」で止める。作っているのは Anthropic で、v2.1.283 のように頻繁に更新されています。</p>
+      <p class="lead"><b>作戦ボード＝監督が書く設定</b>（CLAUDE.md、メモリ、スキル、フックの中身）。クラブが、試合の前に選手へ渡してくれる紙です。</p>
     </div>
   </section>
 
-  <section class="chapter tall" id="c2" data-ch="2">
+  <section class="chapter" id="c2" data-ch="2">
     <div class="copy">
-      <p class="eyebrow"><i></i>02 / ルールを1つ足す</p>
-      <h2><span class="ph">同じルールが、</span><span class="ph"><em>助け</em>にも、</span><span class="ph"><span class="bad">足かせ</span>にもなる。</span></h2>
-      <p class="lead">アプリ開発で、確かめずに進めて、失点しました。そこで、ボードに<b>確認のルール</b>を足します。</p>
-      <p class="lead">右では、相手を止めて、守れました。でも左では、確認待ちで止まり、攻めきれません。</p>
-      <p class="lead">今度は、<b>止まるなのルール</b>を足します。左は得点。右は、カウンターで失点。</p>
-      <p class="punch"><span class="ph">ルールそのものに、</span><span class="ph">良い悪いはない。</span><em><span class="ph">どの試合かで決まる。</span></em></p>
-    </div>
-  </section>
-
-  <section class="chapter" id="c3" data-ch="3">
-    <div class="copy">
-      <p class="eyebrow"><i></i>03 / 最大公倍数</p>
+      <p class="eyebrow"><i></i>02 / 最大公倍数</p>
       <h2><span class="ph">攻撃的に</span><span class="ph">しようとして、</span><span class="ph"><em>8-1-1</em>。</span></h2>
-      <p class="lead">それなら、両方に効くルールを、全部足せばいい。気づけば、<b>最大公倍数</b>。</p>
-      <p class="lead">両方の試合で、失点します。</p>
+      <p class="lead">どの試合でも勝てるように、ボードに書き足していく。気づけば、<b>最大公倍数</b>。</p>
       <p class="punch"><span class="ph">燃費がよくて、</span><span class="ph">速い車のような</span><span class="ph">ハーネスは<em>幻想</em>。</span></p>
       <p class="note">公式の目安は、CLAUDE.md 1ファイルにつき200行以内。長いほど守られにくくなり、矛盾するルールはどちらかを勝手に選ぶことがある、とあります。</p>
     </div>
   </section>
 
+  <section class="chapter" id="c3" data-ch="3">
+    <div class="copy">
+      <p class="eyebrow"><i></i>03 / 仕組み</p>
+      <h2>ボードの線が、<br>選手の<em>動き</em>になる。</h2>
+      <p class="lead">ボードに書いた線は、そのまま選手の動きになります。確認しろと書けば止まり、止まるなと書けば走る。</p>
+      <p class="note">公式にも、CLAUDE.md は強制ではなく文脈として扱われるので、必ず止めたいときはフックを使うように、とあります。</p>
+    </div>
+  </section>
+
   <section class="chapter" id="c4" data-ch="4">
     <div class="copy">
-      <p class="eyebrow"><i></i>04 / ボードを分ける</p>
-      <h2>ボードを、<br><em>試合ごと</em>に分ける。</h2>
-      <p class="lead">ゲーム制作は、4-3-3と、止まるな。アプリ開発は、5-4-1と、確認。</p>
-      <p class="lead">左は得点。右は守れた。</p>
-      <p class="punch"><span class="ph">とある案件（試合）で</span><span class="ph">最適なハーネスは、</span><em><span class="ph">他の試合で</span><span class="ph">最適とはかぎらない。</span></em></p>
+      <p class="eyebrow"><i></i>04 / 相手が違えば</p>
+      <h2>相手が違えば、<br>勝てる<em>並び</em>も違う。</h2>
+      <p class="lead">ミスが許されないアプリ開発には、5-4-1。速さが勝負のゲーム制作には、4-3-3。</p>
     </div>
   </section>
 
   <section class="chapter" id="c5" data-ch="5">
     <div class="copy">
-      <p class="eyebrow"><i></i>05 / 変えられない地面と、4つのツマミ</p>
-      <h2>足もとは、<br><span class="off">変えられない</span>。</h2>
-      <p class="lead">足もとのスタジアムは、公式のハーネス。Claude Codeそのものです。自分では書き換えられない、この世のことわりです。</p>
-      <p class="lead">回せるのは、用意されたツマミだけ。</p>
-      <ul class="knobs"><li>モデル</li><li>考える深さ</li><li>許可</li><li>道具</li></ul>
+      <p class="eyebrow"><i></i>05 / ボードを分ける</p>
+      <h2>ボードを、<br><em>試合ごと</em>に分ける。</h2>
+      <p class="lead">ボードを試合ごとに分けると、両方とも勝てる。</p>
+      <p class="punch"><span class="ph">とある案件（試合）で</span><span class="ph">最適なハーネスは、</span><em><span class="ph">他の試合で</span><span class="ph">最適とはかぎらない。</span></em></p>
     </div>
   </section>
 
   <section class="chapter" id="c6" data-ch="6">
     <div class="copy">
-      <p class="eyebrow"><i></i>06 / 審判</p>
-      <h2><span class="ph">書いても</span><span class="ph">守られないことには、</span><em><span class="ph">審判を置く。</span></em></h2>
-      <p class="lead">フックは、ルールを破りそうになると、笛を吹きます。笛が増えすぎると、試合が止まる。</p>
-      <p class="lead">笛の加減は、人が決める。</p>
-      <p class="note">公式にも、CLAUDE.md は強制ではなく文脈として扱われるので、必ず止めたいときはフックを使うように、とあります。</p>
-    </div>
-  </section>
-
-  <section class="chapter" id="c7" data-ch="7">
-    <div class="copy">
-      <p class="eyebrow"><i></i>07 / 明日は、相手が変わる</p>
-      <h2><span class="ph">だから、</span><span class="ph">ハーネスは</span><em><span class="ph">毎日組み直す。</span></em></h2>
-      <p class="lead">明日は、相手が変わります。公式のハーネスも更新され、選手も成長します。</p>
-      <p class="lead">ツマミを回すことと、ボードを書き直すこと。</p>
+      <p class="eyebrow"><i></i>06 / 毎日</p>
+      <h2><span class="ph">だから監督は、</span><em><span class="ph">毎日</span></em><span class="ph">ボードを書き直す。</span></h2>
+      <p class="lead">明日は、相手が変わります。スタジアムも、更新で変わっていく。</p>
     </div>
   </section>
 </main>
