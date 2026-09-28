@@ -1,6 +1,11 @@
 import './series.css';
 import './harness.css';
 import * as THREE from 'three';
+import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+import { createGrade } from './lib/look.js';
+import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
+import { HorizontalTiltShiftShader } from 'three/addons/shaders/HorizontalTiltShiftShader.js';
+import { VerticalTiltShiftShader } from 'three/addons/shaders/VerticalTiltShiftShader.js';
 
 // 3Dでわかる ハーネス：スクロールの位置 g（章番号＋章の中の進み 0〜1）で、3Dの場面を組み替える。
 // 最初から最後まで、同じ画面に「作戦ボード1枚と、2つの試合（ゲーム制作・アプリ開発）」がある。
@@ -48,9 +53,19 @@ const span = (g, a, b, f = 0.04) => band(g, a, b, f);
 const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
 renderer.setPixelRatio(Math.min(2, window.devicePixelRatio || 1));
 renderer.setClearColor(COL.bg, 1);
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.08;
 const scene = new THREE.Scene();
-scene.fog = new THREE.Fog(COL.bg, 55, 110);
-const camera = new THREE.PerspectiveCamera(36, 1, 0.1, 200);
+scene.fog = new THREE.FogExp2(COL.bg, 0.018);
+// 映り込み：スタジアム、選手、ピッチが部屋の光を拾う
+scene.environment = new THREE.PMREMGenerator(renderer).fromScene(new RoomEnvironment(), 0.04).texture;
+scene.environmentIntensity = 0.32;
+const camera = new THREE.PerspectiveCamera(36, 1, 0.1, 260);
+const grade = createGrade(renderer, scene, camera, { bloom: [0.78, 0.55, 0.58], grain: 0.045, chroma: 0.0022, vignette: 0.42 });
+// 被写界深度：見ている物（画面の縦の真ん中）にピント、手前と奥をボカす。ミニチュアのように見える
+const tiltH = new ShaderPass(HorizontalTiltShiftShader), tiltV = new ShaderPass(VerticalTiltShiftShader);
+grade.composer.insertPass(tiltH, 1); grade.composer.insertPass(tiltV, 2);
+tiltH.uniforms.r.value = tiltV.uniforms.r.value = 0.5;
 scene.add(new THREE.AmbientLight(0xffffff, 0.5));
 const sun = new THREE.DirectionalLight(0xffffff, 1.0); sun.position.set(4, 12, 6); scene.add(sun);
 
@@ -66,8 +81,42 @@ let fadeTo = venue.stadium;
 const fading = mat => { mat.transparent = true; mat.userData.base = mat.opacity; fadeTo.push(mat); return mat; };
 
 // 地面
-const ground = new THREE.Mesh(new THREE.PlaneGeometry(140, 140), new THREE.MeshBasicMaterial({ color: 0x070d17 }));
+// 床：濡れたような光沢。照明と部屋の光が映り込む
+const ground = new THREE.Mesh(new THREE.PlaneGeometry(140, 140), new THREE.MeshStandardMaterial({ color: 0x060c16, roughness: 0.22, metalness: 0.65 }));
 ground.rotation.x = -Math.PI / 2; ground.position.y = -0.02; scene.add(ground);
+
+// 空：真上は深い紺、地平にかけて青緑の靄。カメラについてくる
+function skyTexture() {
+  const c = document.createElement('canvas'); c.width = 4; c.height = 256; const x = c.getContext('2d');
+  const gr = x.createLinearGradient(0, 256, 0, 0);
+  [['#04070d', 0], ['#0a1a24', 0.42], ['#123040', 0.5], ['#0a1622', 0.6], ['#03060c', 1]].forEach(([col, at]) => gr.addColorStop(at, col));
+  x.fillStyle = gr; x.fillRect(0, 0, 4, 256);
+  const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; return t;
+}
+const sky = new THREE.Mesh(new THREE.SphereGeometry(120, 32, 16), new THREE.MeshBasicMaterial({ map: skyTexture(), side: THREE.BackSide, fog: false, depthWrite: false }));
+sky.frustumCulled = false; scene.add(sky);
+
+// 漂う粉塵：時刻だけで動く点。毎フレームの計算は GPU 側
+const DUST = 520;
+const dust = (() => {
+  const pos = [], seed = [];
+  for (let i = 0; i < DUST; i++) { pos.push((Math.random() - 0.5) * 24, Math.random() * 6, (Math.random() - 0.5) * 17); seed.push(Math.random(), Math.random(), Math.random()); }
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setAttribute('aSeed', new THREE.Float32BufferAttribute(seed, 3));
+  const m = new THREE.ShaderMaterial({
+    uniforms: { uTime: { value: 0 }, uOpacity: { value: 0.3 } },
+    vertexShader: `attribute vec3 aSeed; uniform float uTime; varying float vA;
+      void main(){ vec3 q=position; float ph=aSeed.x*6.2832;
+        q.x+=sin(uTime*(.07+aSeed.y*.06)+ph)*1.4; q.z+=cos(uTime*(.06+aSeed.z*.05)+ph)*1.2;
+        q.y=mod(q.y+uTime*(.08+aSeed.z*.12),6.);
+        vec4 mv=modelViewMatrix*vec4(q,1.); vA=(.35+.65*aSeed.y)*smoothstep(0.,1.2,q.y)*smoothstep(6.,4.5,q.y);
+        gl_PointSize=max(1.,(1.+aSeed.z*1.6)*38./max(1.,-mv.z)); gl_Position=projectionMatrix*mv; }`,
+    fragmentShader: `varying float vA; uniform float uOpacity;
+      void main(){ vec2 d=gl_PointCoord-.5; float r=dot(d,d); if(r>.25) discard; gl_FragColor=vec4(vec3(.85,.95,1.),smoothstep(.25,0.,r)*vA*uOpacity); }`,
+    transparent: true, depthWrite: false, blending: THREE.AdditiveBlending,
+  });
+  const pts = new THREE.Points(g, m); pts.frustumCulled = false; scene.add(pts); return pts;
+})();
 
 // ピッチ
 function pitchTexture() {
@@ -89,7 +138,7 @@ const flat = mat => { const m = new THREE.Mesh(new THREE.PlaneGeometry(PW, PL), 
 // ---------- スタジアム（公式のハーネス）：2つのピッチをまるごと囲む ----------
 const stadium = new THREE.Group(); scene.add(stadium);
 const D = 2.2, HS = 1.6, TIERS = 4;
-const standMat = fading(new THREE.MeshStandardMaterial({ color: 0x1c130c, emissive: COL.orange, emissiveIntensity: 0.06, opacity: 0.9 }));
+const standMat = fading(new THREE.MeshStandardMaterial({ color: 0x1c130c, emissive: COL.orange, emissiveIntensity: 0.06, opacity: 0.9, metalness: 0.3, roughness: 0.5 }));
 const standLine = lineMat(COL.orange, 0.55);
 for (let k = 0; k < TIERS; k++) {
   const o = (k * D) / TIERS, d = D / TIERS, h = ((k + 1) * HS) / TIERS;
@@ -119,6 +168,17 @@ function glowTexture() {
   return new THREE.CanvasTexture(c);
 }
 const glowMat = fading(new THREE.SpriteMaterial({ map: glowTexture(), depthWrite: false, blending: THREE.AdditiveBlending }));
+// 照明の光の筋：先ほど明るく、根もとへ消えていく円すい
+const lamps = [], beams = [];
+const poolGeo = new THREE.PlaneGeometry(7, 7);
+const poolMat = new THREE.MeshBasicMaterial({ map: glowTexture(), color: 0xffd6a0, transparent: true, opacity: 0.22, depthWrite: false, blending: THREE.AdditiveBlending });
+const coneGeo = new THREE.ConeGeometry(2.6, 6.2, 32, 1, true);
+const beamMat = new THREE.ShaderMaterial({
+  uniforms: { uColor: { value: new THREE.Color(0xffe6c2) }, uOpacity: { value: 0.075 } },
+  vertexShader: `varying float vY; void main(){ vY=(position.y+3.1)/6.2; gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.); }`,
+  fragmentShader: `varying float vY; uniform vec3 uColor; uniform float uOpacity; void main(){ gl_FragColor=vec4(uColor, pow(vY,1.6)*uOpacity); }`,
+  transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, side: THREE.DoubleSide, fog: false,
+});
 const poleMat = fading(new THREE.MeshStandardMaterial({ color: 0x2a1c12, emissive: COL.orange, emissiveIntensity: 0.15 }));
 const headMat = fading(new THREE.MeshBasicMaterial({ color: 0xfff1cf }));
 [[1, 1], [1, -1], [-1, 1], [-1, -1]].forEach(([sx, sz]) => {
@@ -126,6 +186,10 @@ const headMat = fading(new THREE.MeshBasicMaterial({ color: 0xfff1cf }));
   const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.1, H, 10), poleMat); pole.position.set(x, H / 2, z); stadium.add(pole);
   const head = new THREE.Mesh(new THREE.BoxGeometry(1.0, 0.55, 0.12), headMat); head.position.set(x, H, z); head.lookAt(0, 0, 0); stadium.add(head);
   const glow = new THREE.Sprite(glowMat); glow.position.set(x, H, z); glow.scale.setScalar(1.6); stadium.add(glow);
+  const pool = new THREE.Mesh(poolGeo, poolMat); pool.rotation.x = -Math.PI / 2; pool.position.set(x * 0.9, 0.01, z * 0.9); stadium.add(pool);
+  const lamp = new THREE.PointLight(0xffe2b8, 5.5, 22, 1.6); lamp.position.set(x, H - 0.2, z); stadium.add(lamp); lamps.push(lamp);
+  const cone = new THREE.Mesh(coneGeo, beamMat); cone.position.set(x * 0.8, H / 2, z * 0.8);
+  cone.lookAt(x * 0.35, 0, z * 0.35); cone.rotateX(-Math.PI / 2); stadium.add(cone); beams.push(cone);
 });
 
 // ツマミ（05）：正面スタンドの前に並ぶ、用意された操作盤
@@ -218,9 +282,9 @@ function makeGK(mat) {
   return g;
 }
 const [GX, GZ] = at(0.5, 0.955);
-const pitchMats = SIDE.map(() => new THREE.MeshBasicMaterial({ map: pitchTex, transparent: true }));
+const pitchMats = SIDE.map(() => new THREE.MeshStandardMaterial({ map: pitchTex, emissiveMap: pitchTex, emissive: 0xffffff, emissiveIntensity: 0.75, roughness: 0.3, metalness: 0.2, transparent: true }));
 const pitches = pitchMats.map((m, s) => { const f = flat(m); f.position.x = sideX(s); return f; });
-const teamMat = SIDE.map(() => new THREE.MeshStandardMaterial({ color: COL.text, emissive: COL.text, emissiveIntensity: 0.35, roughness: 0.35 }));
+const teamMat = SIDE.map(() => new THREE.MeshStandardMaterial({ color: COL.text, emissive: COL.text, emissiveIntensity: 0.35, roughness: 0.22, metalness: 0.25 }));
 const teams = teamMat.map(makeTeam);
 const keepers = teamMat.map(makeGK);
 const redMat = SIDE.map(() => new THREE.MeshStandardMaterial({ color: COL.red, emissive: COL.red, emissiveIntensity: 0.5, transparent: true }));
@@ -342,15 +406,41 @@ tag('board', '作戦ボード：毎日組み直す', () => [boardX(0), TB.y + 1.
 
 // ---------- カメラ（g ごとの見る場所） ----------
 // tx/tz＝見る先。d＝距離（dm はスマホ）。
-const WIDE = { az: 0.36, el: 0.62, d: 50, tx: -2.4, tz: 0, dm: 62, mx: -4 };
-const TWIN = { az: 0, el: 0.98, d: 44, tx: 2.8, tz: -1.4, dm: 41, mx: 0 };
-const CLUB = { az: -0.3, el: 0.62, d: 44, tx: -5.2, tz: -1, dm: 52, mx: -7 };
-const STAND = { az: 0.42, el: 0.46, d: 42, tx: 2.6, tz: 3, dm: 46, mx: 0 };
+// 1行ごとの画：声が名指しした物へ寄る。ty＝見る高さ、mx＝スマホで見る先、blur＝ボケの強さ
+const shot = o => ({ ty: 0.3, blur: 1, dm: o.d * 1.25, mx: o.tx, ...o });
+const SH = {
+  WIDE: shot({ az: 0.36, el: 0.62, d: 50, tx: -2.4, tz: 0, dm: 62, mx: -4, blur: 0.45 }),
+  WIDE2: shot({ az: 0.3, el: 0.68, d: 44, tx: -0.5, tz: 0, dm: 56, mx: -2, blur: 0.55 }),
+  TWIN: shot({ az: 0, el: 0.98, d: 44, tx: 2.8, tz: -1.4, dm: 41, mx: 0, blur: 0.6 }),
+  LEFT: shot({ az: -0.16, el: 0.8, d: 25, tx: -4.4, tz: 0.6 }),
+  RIGHT: shot({ az: 0.16, el: 0.8, d: 25, tx: 4.4, tz: 0.6 }),
+  PLAYERS: shot({ az: 0.38, el: 0.46, d: 15, tx: 4.4, ty: 0.3, tz: 1.6, blur: 1.4 }),
+  CLUB: shot({ az: -0.3, el: 0.62, d: 44, tx: -5.2, tz: -1, dm: 52, mx: -7, blur: 0.6 }),
+  BOARD: shot({ az: 0, el: 0.3, d: 15, tx: 0, ty: 4.2, tz: -7, blur: 1.3 }),
+  BOARDS: shot({ az: 0, el: 0.36, d: 22, tx: 0, ty: 4.0, tz: -6.5, blur: 1.1 }),
+  BOARD_L: shot({ az: -0.24, el: 0.5, d: 20, tx: -4.4, ty: 2.6, tz: -4, blur: 1.2 }),
+  BOARD_R: shot({ az: 0.24, el: 0.5, d: 20, tx: 4.4, ty: 2.6, tz: -4, blur: 1.2 }),
+  STAND: shot({ az: 0.42, el: 0.46, d: 42, tx: 2.6, tz: 3, dm: 46, mx: 0, blur: 0.7 }),
+  WALL: shot({ az: 0.3, el: 0.28, d: 22, tx: 4, ty: 2.2, tz: -8, mx: 0, blur: 1.1 }),
+  KNOBS: shot({ az: 0, el: 0.66, d: 13, tx: 0, ty: 0.3, tz: 9.6, blur: 1.4 }),
+  REF: shot({ az: -0.2, el: 0.55, d: 14, tx: -4.4, ty: 0.5, tz: 0, blur: 1.4 }),
+  HIGH: shot({ az: 0.2, el: 1.1, d: 48, tx: 2, tz: -1, dm: 50, mx: 0, blur: 0.5 }),
+};
+const SHOTS = [
+  ['WIDE', 'WIDE2'],
+  ['LEFT', 'RIGHT', 'PLAYERS', 'CLUB', 'TWIN'],
+  ['RIGHT', 'BOARD', 'RIGHT', 'LEFT', 'BOARD', 'TWIN', 'TWIN'],
+  ['BOARD', 'BOARD', 'TWIN', 'TWIN', 'WIDE2'],
+  ['BOARDS', 'BOARD_L', 'BOARD_R', 'TWIN', 'TWIN'],
+  ['STAND', 'WALL', 'KNOBS', 'KNOBS'],
+  ['REF', 'RIGHT', 'TWIN', 'TWIN'],
+  ['TWIN', 'HIGH', 'TWIN', 'WIDE'],
+];
+// 行の頭で着いて、行の終わりまで留まり、次の行へ移る
 function camKeys() {
-  return [
-    [0.35, WIDE], [1.0, TWIN], [p(1, 3), TWIN], [p(1, 3, 0.35), CLUB], [p(1, 4), CLUB], [p(1, 4, 0.45), TWIN],
-    [5.0, TWIN], [p(5, 0, 0.4), STAND], [L(5, 3)[1], STAND], [6.15, TWIN], [p(7, 2), TWIN], [p(7, 3), WIDE],
-  ];
+  const keys = [];
+  SHOTS.forEach((row, c) => row.forEach((name, i) => { keys.push([p(c, i, 0), SH[name]], [p(c, i, 0.82), SH[name]]); }));
+  return keys;
 }
 function camAt(g) {
   const keys = camKeys();
@@ -386,6 +476,7 @@ const probe = () => innerHeight * (mobile ? 0.73 : 0.5);
 function measure() {
   W = canvas.clientWidth; H = canvas.clientHeight; mobile = innerWidth < 900;
   renderer.setSize(W, H, false);
+  grade.setSize(W, H);
   if (mobile) { camera.aspect = W / H; camera.clearViewOffset(); }
   else { camera.aspect = (W * 1.5) / H; camera.setViewOffset(W * 1.5, H, 0, 0, W, H); }
   camera.updateProjectionMatrix();
@@ -406,7 +497,6 @@ let intro = reduced ? 1 : 0, introStart = null;
 function introTick(now) {
   introStart ??= now;
   intro = Math.min(1, (now - introStart) / 2800);
-  update();
   if (intro < 1) requestAnimationFrame(introTick);
 }
 
@@ -493,6 +583,9 @@ addEventListener('keydown', e => { if (['Escape', 'ArrowDown', 'ArrowUp', 'PageD
 document.addEventListener('visibilitychange', () => { if (document.hidden) stop(); });
 
 // ---------- 1コマ ----------
+const goal = new THREE.Vector3(), goalLook = new THREE.Vector3(), look = new THREE.Vector3();
+let snap = true, clock = 0, frameDt = 0.016, last = 0, inView = true;
+new IntersectionObserver(e => { inView = e[0].isIntersecting; }).observe(stageEl);
 function update() {
   queued = false;
   const g = progress();
@@ -580,11 +673,19 @@ function update() {
 
   // カメラ
   const c = camAt(g), dist = mobile ? c.dm : c.d, tx = mobile ? c.mx : c.tx;
-  camera.position.set(tx + Math.sin(c.az) * Math.cos(c.el) * dist, Math.sin(c.el) * dist, c.tz + Math.cos(c.az) * Math.cos(c.el) * dist);
-  camera.lookAt(tx, mobile ? 0.6 : 0.2, c.tz);
+  goal.set(tx + Math.sin(c.az) * Math.cos(c.el) * dist, Math.sin(c.el) * dist, c.tz + Math.cos(c.az) * Math.cos(c.el) * dist);
+  goalLook.set(tx, c.ty, c.tz);
+  const blurPx = (mobile ? 2.6 : 4.2) * c.blur;
+  tiltH.uniforms.h.value = blurPx / Math.max(1, W); tiltV.uniforms.v.value = blurPx / Math.max(1, H);
+  const k = snap || reduced ? 1 : 1 - Math.exp(-frameDt * 2.6);
+  camera.position.lerp(goal, k); look.lerp(goalLook, k); snap = false;
+  camera.lookAt(look);
   camera.updateMatrixWorld();
 
-  renderer.render(scene, camera);
+  sky.position.copy(camera.position);
+  dust.material.uniforms.uTime.value = clock;
+  scene.fog.density = 0.75 / Math.max(10, camera.position.distanceTo(look));
+  grade.render(clock);
 
   // 文字：声が名指ししたものだけを明るく、ほかは下げる
   for (const t of tags) {
@@ -612,9 +713,16 @@ function update() {
   const max = document.documentElement.scrollHeight - innerHeight;
   bar.style.width = (max > 0 ? (window.scrollY / max) * 100 : 0) + '%';
 }
-function onScroll() { if (!queued) { queued = true; requestAnimationFrame(update); } }
-window.addEventListener('scroll', onScroll, { passive: true });
-window.addEventListener('resize', () => { measure(); update(); });
-if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => { measure(); update(); });
+// 常に描く：粉塵、光の筋、カメラの移動が止まらないように。見えていない間は止める
+function loop(now) {
+  requestAnimationFrame(loop);
+  frameDt = Math.min(0.05, (now - last) / 1000 || 0.016); last = now;
+  if (!inView || document.hidden) return;
+  if (!reduced) clock += frameDt;
+  update();
+}
+window.addEventListener('resize', () => { measure(); snap = true; });
+if (document.fonts && document.fonts.ready) document.fonts.ready.then(measure);
 measure(); update();
+requestAnimationFrame(loop);
 if (!reduced) requestAnimationFrame(introTick);
