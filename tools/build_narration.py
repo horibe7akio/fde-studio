@@ -157,10 +157,44 @@ HARNESS = [
     (7, "ツマミを回すことと、ボードを書き直すこと。", None, None),
 ]
 
+# The harness explainer animation: 7 scenes, one causal idea (same players, a different board).
+EXPLAINER = [
+    (0, "同じ選手が、ある試合では勝ち、別の試合では負けます。", None, None),
+    (0, "何が違うのでしょう。", None, None),
+
+    (1, "選手はAIのモデル。", None, None, "選手はエーアイのモデル。"),
+    (1, "できるのは、次に何をするかを答えることだけ。", None, None),
+    (1, "手足になるのは、クラブとスタジアム。", None, None),
+    (1, "公式のハーネス、Claude Codeです。", None, None, "公式のハーネス、クロード・コードです。"),
+    (1, "試合の前には、監督が書いた作戦ボードが渡されます。", None, None),
+
+    (2, "どの試合でも勝てるように、ボードに書き足していく。", None, None),
+    (2, "気づけば、最大公倍数。", None, None),
+    (2, "攻撃的にしようとして、8-1-1。", None, None, "攻撃的にしようとして、はち、いち、いち。"),
+    (2, "燃費がよくて、速い車のようなハーネスは幻想。", None, None),
+
+    (3, "ボードに書いた線は、そのまま選手の動きになります。", None, None),
+    (3, "確認しろと書けば止まり、", None, None),
+    (3, "止まるなと書けば走る。", None, None),
+
+    (4, "でも、相手が違えば、勝てる並びも違います。", None, None),
+    (4, "ミスが許されないアプリ開発には、5-4-1。", None, None, "ミスが許されないアプリ開発には、ご、よん、いち。"),
+    (4, "速さが勝負のゲーム制作には、4-3-3。", None, None, "速さが勝負のゲーム制作には、よん、さん、さん。"),
+
+    (5, "ボードを試合ごとに分けると、両方とも勝てる。", None, None),
+    (5, "とある案件（試合）で最適なハーネスは、他の試合で最適とはかぎらない。", None, None,
+     "とある案件、試合で最適なハーネスは、他の試合で最適とはかぎらない。"),
+
+    (6, "明日は、相手が変わります。", None, None),
+    (6, "スタジアムも、更新で変わっていく。", None, None),
+    (6, "だから監督は、毎日ボードを書き直すのです。", None, None),
+]
+
 # page -> (script, output name, per-line cache)
 PAGES = {
     "fde": (SCRIPT, "narration", CACHE_DIR),
     "harness": (HARNESS, "harness", ROOT / "output" / "narration_lines_harness"),
+    "harness-explainer": (EXPLAINER, "harness-explainer", ROOT / "output" / "narration_lines_harness_explainer"),
 }
 
 
