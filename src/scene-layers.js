@@ -5,6 +5,7 @@ import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js'
 import { SMAAPass } from 'three/addons/postprocessing/SMAAPass.js';
 import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+import { createFigure, createTower } from './lib/look.js';
 import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
 
 const CYAN = 0x61fce4, LIME = 0xc6ff51, PINK = 0xff637f;
@@ -345,16 +346,10 @@ export function createCosmos(canvas, state) {
   plate(company,14,10,0,0,CYAN);scanBar(company,14,10,0,CYAN,0);
   const focusFloor=plate(workplace,6.8,4.4,0,.1,AMBER);scanBar(workplace,6.8,4.4,.1,AMBER,.35);
   function building(x,z,height,color=CYAN){
-    const g=new T.Group();company.add(g);g.position.set(x,0,z);
-    const geo=new T.BoxGeometry(1.7,height,1.35);
-    const building=mesh(g,geo,new T.MeshStandardMaterial({color:0x173936,metalness:.25,roughness:.4}),0,height/2,0);
-    buildingMats.push(building.material);
-    outline(building,geo,color,.45);
-    box(g,[1.9,.08,1.52],[0,height+.03,0],neon(color,.5));
-    for(let row=.38;row<height-.1;row+=.48)for(let col=-.5;col<=.5;col+=.5){
-      box(g,[.23,.22,.018],[col,row,.684],neon(color,.42));
-    }
-    return g;
+    const tower=createTower(height,color,{trim:black});
+    tower.group.position.set(x,0,z);company.add(tower.group);
+    buildingMats.push(tower.body);
+    return tower.group;
   }
   const buildingMats=[];
   const buildings=[building(-5,-2.5,2.8),building(5,-2.5,2.5),building(-5,2.6,1.7),building(5,2.6,2),building(0,-3.9,3.5)];
@@ -362,16 +357,9 @@ export function createCosmos(canvas, state) {
 
   // Adapted from V1: separate head, torso, arms and legs, rather than an abstract processor.
   function person(parent,x,z,color,scale=1){
-    const g=new T.Group();g.position.set(x,0,z);g.scale.setScalar(scale);parent.add(g);
-    const suit=new T.MeshStandardMaterial({color,roughness:.5,metalness:.08,emissive:color,emissiveIntensity:.09});
-    mesh(g,new T.CylinderGeometry(.24,.29,.69,24),suit,0,.62,0);
-    mesh(g,new T.SphereGeometry(.23,24,18),new T.MeshStandardMaterial({color:0xffeed9,roughness:.55}),0,1.18,0);
-    box(g,[.17,.38,.22],[-.14,.17,0],dark);box(g,[.17,.38,.22],[.14,.17,0],dark);
-    const left=box(g,[.14,.6,.17],[-.34,.68,0],suit);left.rotation.z=-.25;
-    const right=box(g,[.14,.6,.17],[.34,.68,0],suit);right.rotation.z=.25;
-    box(g,[.14,.09,.028],[.08,.74,.265],neon(color));
-    const halo=ring(g,.53,color,.019,.8);halo.position.y=.015;
-    return {group:g,left,right,halo};
+    const figure=createFigure(color,{trim:dark});
+    figure.group.position.set(x,0,z);figure.group.scale.setScalar(scale);parent.add(figure.group);
+    return figure;
   }
   const fde=person(workplace,0,1.55,AMBER,1.15);
   const colleagues=[person(workplace,-2.35,.15,CYAN,.85),person(workplace,2.25,.4,CYAN,.85)];
