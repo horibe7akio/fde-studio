@@ -28,7 +28,11 @@ const MOTION = PARAMS.has('motion');
 // ?drive：通常の画面のまま、スクロールと時刻を外から1コマずつ進める（PV用）。?clean：動画用の文字を重ねない
 const DRIVE = PARAMS.has('drive'), CLEAN = PARAMS.has('clean');
 // ?motion&explain：説明アニメ（7場面）を書き出す
-const EXPLAIN = MOTION && PARAMS.has('explain');
+// ふだんのページも、説明アニメと同じ7場面をスクロールで見せる
+const EXPLAIN_PAGE = !MOTION && !DRIVE;
+const EXPLAIN = (MOTION && PARAMS.has('explain')) || EXPLAIN_PAGE;
+if (EXPLAIN_PAGE) document.documentElement.classList.add('explain-page');
+let exFrame = null;
 let camOverride = null, beforeRender = null;
 if (MOTION) document.documentElement.classList.add('motion');
 let gOverride = null;
@@ -553,7 +557,7 @@ fetch(narrationURL).then(r => (r.ok ? r.json() : null)).then(data => {
   audio.preload = 'metadata'; audio.hidden = true; document.body.append(audio);
   audio.addEventListener('ended', stop);
   const note = document.getElementById('play-note');
-  if (note) note.textContent = `音声つき / ${Math.floor(data.duration / 60)}分${String(Math.round(data.duration % 60)).padStart(2, '0')}秒`;
+  if (note && !EXPLAIN_PAGE) note.textContent = `音声つき / ${Math.floor(data.duration / 60)}分${String(Math.round(data.duration % 60)).padStart(2, '0')}秒`;
   update();
 }).catch(() => {});
 function scrollToG(g) {
@@ -581,6 +585,7 @@ function stop() {
   update();
 }
 playButton.addEventListener('click', () => {
+  if (EXPLAIN_PAGE) return;
   if (playing) { stop(); return; }
   if (!audio) return;
   measure(); scrollToG(0);
@@ -731,7 +736,7 @@ function loop(now) {
   frameDt = Math.min(0.05, (now - last) / 1000 || 0.016); last = now;
   if (!inView || document.hidden) return;
   if (!reduced) clock += frameDt;
-  update();
+  if (EXPLAIN_PAGE && exFrame) exFrame(); else update();
 }
 window.addEventListener('resize', () => { measure(); snap = true; });
 if (document.fonts && document.fonts.ready) document.fonts.ready.then(measure);
@@ -863,9 +868,9 @@ if (EXPLAIN) {
     arrowMat.opacity = st.arrows || 0; arrows.forEach(l => { l.visible = (st.arrows || 0) > 0.01; });
   };
 
-  window.__explain = t => {
+  const frame = t => {
     if (!lines.length) return false;
-    clock = t; frameDt = 1 / 30; intro = 1;
+    if (MOTION) { clock = t; frameDt = 1 / 30; intro = 1; }
     const starts = [0, 1, 2, 3, 4, 5, 6].map(sc => (sc === 0 ? 0 : T(sc, 0) - 0.45));
     const sc = Math.max(0, starts.filter(x => t >= x).length - 1);
     const lab = {};   // chip -> [pos, text, alpha]
@@ -971,12 +976,67 @@ if (EXPLAIN) {
     const capOn = cur && t <= cur.end + 0.35;
     $('.ex-cap').textContent = capOn ? cur.text : '';
     $('.ex-cap').style.opacity = capOn ? '1' : '0';
-    const endAt = TE(6, 2) + 0.5;
-    $('.ex-dip').style.opacity = String(0.86 * ramp(t, endAt, endAt + 0.6));
-    $('.ex-end').style.opacity = String(ease(ramp(t, endAt + 0.2, endAt + 0.9)));
+    if (MOTION) {
+      const endAt = TE(6, 2) + 0.5;
+      $('.ex-dip').style.opacity = String(0.86 * ramp(t, endAt, endAt + 0.6));
+      $('.ex-end').style.opacity = String(ease(ramp(t, endAt + 0.2, endAt + 0.9)));
+    } else {
+      // ページ：字幕は再生中だけ。ナビは場面で光らせる
+      if (!exPlaying) $('.ex-cap').style.opacity = '0';
+      document.querySelectorAll('[data-scene]').forEach(a => a.classList.toggle('on', Number(a.dataset.scene) === sc));
+      const layer = sc === 1 ? (t < T(1, 4) ? 'stadium' : 'board') : sc === 2 || sc === 3 ? 'board' : sc === 6 && t >= T(6, 2) ? 'board' : 'pitch';
+      layerLinks.forEach(a => a.classList.toggle('on', a.dataset.layer === layer));
+      const done = progress() >= secs.length;
+      dayNav.classList.remove('loop');
+      dayNav.classList.toggle('gone', done); layerNav.classList.toggle('gone', done);
+      stageEl.classList.toggle('off', done && mobile);
+    }
     return true;
   };
-  window.__ready = false;
-  const waitEx = () => (narration && lines.length ? (measure(), window.__ready = true) : setTimeout(waitEx, 100));
-  waitEx();
+  window.__explain = frame;
+
+  // ページ：スクロールの位置（再生中は声の位置）を、場面の時刻に直す
+  let exAudio = null, exPlaying = false;
+  const bounds = () => {
+    const starts = [0, 1, 2, 3, 4, 5, 6].map(sc => (sc === 0 ? 0 : T(sc, 0) - 0.45));
+    return starts.map((a, i) => [a, i < 6 ? starts[i + 1] : TE(6, 2) + 1.2]);
+  };
+  const timeFromScroll = () => {
+    const g = Math.min(progress(), secs.length - 0.001), c = Math.floor(g), f = g - c;
+    const [a, b] = bounds()[c]; return lerp(a, b, f);
+  };
+  const scrollToTime = t => {
+    const bs = bounds(); let c = bs.findIndex(([a, b]) => t >= a && t < b); if (c < 0) c = t < 0 ? 0 : bs.length - 1;
+    const f = clamp((t - bs[c][0]) / (bs[c][1] - bs[c][0]), 0, 0.999);
+    window.scrollTo({ top: Math.max(0, tops[c] + f * hs[c] - probe()), behavior: 'instant' });
+  };
+  const exStop = () => {
+    if (!exPlaying) return;
+    exPlaying = false; exAudio.pause(); exAudio.currentTime = 0;
+    playButton.setAttribute('aria-pressed', 'false'); stopButton.hidden = true;
+  };
+  if (EXPLAIN_PAGE) {
+    exFrame = () => { if (!lines.length) { update(); return; } const t = exPlaying ? exAudio.currentTime : timeFromScroll(); if (exPlaying) scrollToTime(t); frame(t); };
+    fetch(new URL('../narration/harness-explainer.json', location.href)).then(r => r.json()).then(d => {
+      exAudio = new Audio(new URL('harness-explainer.m4a', new URL('../narration/', location.href)).href);
+      exAudio.preload = 'metadata'; exAudio.hidden = true; document.body.append(exAudio);
+      exAudio.addEventListener('ended', exStop);
+      const note = document.getElementById('play-note');
+      if (note) note.textContent = `音声つき / ${Math.floor(d.duration / 60)}分${String(Math.round(d.duration % 60)).padStart(2, '0')}秒`;
+    });
+    playButton.addEventListener('click', () => {
+      if (exPlaying) { exStop(); return; }
+      if (!exAudio) return;
+      measure(); exAudio.currentTime = 0; exAudio.play().catch(() => {});
+      exPlaying = true; playButton.setAttribute('aria-pressed', 'true'); stopButton.hidden = false;
+    });
+    stopButton.addEventListener('click', exStop);
+    for (const ev of ['wheel', 'touchstart']) addEventListener(ev, exStop, { passive: true });
+    addEventListener('keydown', e => { if (['Escape', 'ArrowDown', 'ArrowUp', 'PageDown', 'PageUp', 'Home', 'End', ' '].includes(e.key)) exStop(); });
+  }
+  if (MOTION) {
+    window.__ready = false;
+    const waitEx = () => (narration && lines.length ? (measure(), window.__ready = true) : setTimeout(waitEx, 100));
+    waitEx();
+  }
 }
