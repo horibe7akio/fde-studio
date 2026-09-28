@@ -3,17 +3,22 @@ import './harness.css';
 import * as THREE from 'three';
 
 // 3Dでわかる ハーネス：スクロールの位置 g（章番号＋章の中の進み 0〜1）で、3Dの場面を組み替える。
-// スタジアム＝公式のハーネス（変えられない）、クラブハウス＝作戦ボードを書く場所（自分で書く）、選手＝モデル。
-// 05〜06章は、共通の作戦ボード1枚で2つの試合（ゲーム制作・アプリ開発）を戦う場面に切り替わる。
+// 最初から最後まで、同じ画面に「作戦ボード1枚と、2つの試合（ゲーム制作・アプリ開発）」がある。
+// スタジアム＝公式のハーネス（変えられない）、クラブハウス＝作戦ボードを書く場所、選手＝モデル、審判＝フック。
+// 場面の出る時刻は、声の台本（public/narration/harness.json）の行の位置から決める。声と絵がずれないように。
 const canvas = document.getElementById('stage');
 const tagLayer = document.getElementById('tags');
+const caption = document.getElementById('caption');
 const secs = [...document.querySelectorAll('[data-ch]')];
-const navs = [...document.querySelectorAll('.nav a')];
+const dayLinks = [...document.querySelectorAll('[data-day]')];
+const layerLinks = [...document.querySelectorAll('[data-layer]')];
+const dayNav = document.querySelector('.day-nav');
+const layerNav = document.querySelector('.layer-nav');
 const bar = document.getElementById('bar');
 const stageEl = document.querySelector('.stage');
-const navEl = document.querySelector('.nav');
+const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-const COL = { bg: 0x060a13, text: 0xe7edf6, cyan: 0x96e5ff, orange: 0xffa777, red: 0xff7a7a, yellow: 0xffd84a };
+const COL = { bg: 0x060a13, text: 0xe7edf6, cyan: 0x96e5ff, orange: 0xffa777, red: 0xff7a7a, yellow: 0xffd84a, violet: 0xb79bff };
 const clamp = (x, a = 0, b = 1) => Math.max(a, Math.min(b, x));
 const ease = k => (k < 0.5 ? 4 * k * k * k : 1 - Math.pow(-2 * k + 2, 3) / 2);
 const ramp = (x, a, b) => clamp((x - a) / (b - a));
@@ -28,28 +33,40 @@ const F811 = [[.50,.80],[.50,.56],[.10,.30],[.21,.24],[.33,.30],[.44,.24],[.56,.
 const shift = (F, dv) => F.map(([u, v]) => [u, clamp(v + dv, 0.1, 0.9)]);
 const mix = (Fa, Fb, k) => Fa.map((p, j) => [lerp(p[0], Fb[j][0], k), lerp(p[1], Fb[j][1], k)]);
 
+// ---------- 時刻：台本の行 ----------
+// 章ごとの行数。声の台本が読めるまでは、章の中を行数で均等に割って使う。
+const LINES = [2, 5, 7, 5, 5, 4, 4, 4];
+const CHAPTERS = LINES.length;
+let CUE = LINES.map(n => Array.from({ length: n }, (_, i) => [i / n, (i + 1) / n]));
+// L(c, i, a, b)：c章 i行目の中の a〜b（0〜1）を、g の範囲で返す
+const L = (c, i, a = 0, b = 1) => { const [f0, f1] = CUE[c][i]; return [c + lerp(f0, f1, a), c + lerp(f0, f1, b)]; };
+const p = (c, i, a = 0) => L(c, i, a, a)[0];
+const during = (g, c, i, f = 0.03) => band(g, ...L(c, i), f);
+const span = (g, a, b, f = 0.04) => band(g, a, b, f);
+
 // ---------- 場 ----------
 const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
 renderer.setPixelRatio(Math.min(2, window.devicePixelRatio || 1));
 renderer.setClearColor(COL.bg, 1);
 const scene = new THREE.Scene();
-scene.fog = new THREE.Fog(COL.bg, 40, 80);
-const camera = new THREE.PerspectiveCamera(36, 1, 0.1, 160);
+scene.fog = new THREE.Fog(COL.bg, 55, 110);
+const camera = new THREE.PerspectiveCamera(36, 1, 0.1, 200);
 scene.add(new THREE.AmbientLight(0xffffff, 0.5));
 const sun = new THREE.DirectionalLight(0xffffff, 1.0); sun.position.set(4, 12, 6); scene.add(sun);
 
 const PW = 6.8, PL = 10.5, M = 0.9;
 const FW = PW + M * 2, FL = PL + M * 2;
+const SEP = 4.4;                 // 左右のピッチの中心（x）
+const SW = 2 * SEP + FW;         // スタジアムの内側の幅：2つのピッチを囲む
 const at = (u, v) => [(u - 0.5) * PW, (v - 0.5) * PL];
 const lineMat = (color, opacity) => new THREE.LineBasicMaterial({ color, transparent: true, opacity });
 const withEdges = (mesh, mat) => { mesh.add(new THREE.LineSegments(new THREE.EdgesGeometry(mesh.geometry), mat)); return mesh; };
-// スタジアムとクラブハウスは、05〜06章のあいだ消える（クラブハウスは07章も）。消す材質をここに集める
 const venue = { stadium: [], club: [] };
 let fadeTo = venue.stadium;
 const fading = mat => { mat.transparent = true; mat.userData.base = mat.opacity; fadeTo.push(mat); return mat; };
 
 // 地面
-const ground = new THREE.Mesh(new THREE.PlaneGeometry(90, 90), new THREE.MeshBasicMaterial({ color: 0x070d17 }));
+const ground = new THREE.Mesh(new THREE.PlaneGeometry(140, 140), new THREE.MeshBasicMaterial({ color: 0x070d17 }));
 ground.rotation.x = -Math.PI / 2; ground.position.y = -0.02; scene.add(ground);
 
 // ピッチ
@@ -68,10 +85,8 @@ function pitchTexture() {
 }
 const pitchTex = pitchTexture();
 const flat = mat => { const m = new THREE.Mesh(new THREE.PlaneGeometry(PW, PL), mat); m.rotation.x = -Math.PI / 2; scene.add(m); return m; };
-const pitchMat = new THREE.MeshBasicMaterial({ map: pitchTex });
-const pitch = flat(pitchMat);
 
-// ---------- スタジアム（公式のハーネス） ----------
+// ---------- スタジアム（公式のハーネス）：2つのピッチをまるごと囲む ----------
 const stadium = new THREE.Group(); scene.add(stadium);
 const D = 2.2, HS = 1.6, TIERS = 4;
 const standMat = fading(new THREE.MeshStandardMaterial({ color: 0x1c130c, emissive: COL.orange, emissiveIntensity: 0.06, opacity: 0.9 }));
@@ -79,25 +94,23 @@ const standLine = lineMat(COL.orange, 0.55);
 for (let k = 0; k < TIERS; k++) {
   const o = (k * D) / TIERS, d = D / TIERS, h = ((k + 1) * HS) / TIERS;
   const sides = [
-    [d, h, FL + 2 * (o + d), FW / 2 + o + d / 2, 0], [d, h, FL + 2 * (o + d), -(FW / 2 + o + d / 2), 0],
-    [FW, h, d, 0, -(FL / 2 + o + d / 2)], [FW, h * 0.5, d, 0, FL / 2 + o + d / 2],
+    [d, h, FL + 2 * (o + d), SW / 2 + o + d / 2, 0], [d, h, FL + 2 * (o + d), -(SW / 2 + o + d / 2), 0],
+    [SW, h, d, 0, -(FL / 2 + o + d / 2)], [SW, h * 0.5, d, 0, FL / 2 + o + d / 2],
   ];
   for (const [w, hh, l, x, z] of sides) {
     const m = withEdges(new THREE.Mesh(new THREE.BoxGeometry(w, hh, l), standMat), standLine);
     m.position.set(x, hh / 2, z); stadium.add(m);
   }
 }
-// 屋根（左右と奥のスタンドの上）
 const roofMat = fading(new THREE.MeshBasicMaterial({ color: COL.orange, opacity: 0.1, side: THREE.DoubleSide, depthWrite: false }));
 [1, -1].forEach(s => {
   const r = withEdges(new THREE.Mesh(new THREE.BoxGeometry(D * 1.05, 0.06, FL + 2 * D), roofMat), standLine);
-  r.position.set(s * (FW / 2 + D * 0.62), HS + 1.05, 0); r.rotation.z = s * -0.16; stadium.add(r);
+  r.position.set(s * (SW / 2 + D * 0.62), HS + 1.05, 0); r.rotation.z = s * -0.16; stadium.add(r);
 });
 {
-  const r = withEdges(new THREE.Mesh(new THREE.BoxGeometry(FW + 2 * D, 0.06, D * 1.05), roofMat), standLine);
+  const r = withEdges(new THREE.Mesh(new THREE.BoxGeometry(SW + 2 * D, 0.06, D * 1.05), roofMat), standLine);
   r.position.set(0, HS + 1.05, -(FL / 2 + D * 0.62)); r.rotation.x = 0.16; stadium.add(r);
 }
-// 照明塔
 function glowTexture() {
   const c = document.createElement('canvas'); c.width = c.height = 128;
   const x = c.getContext('2d'); const gr = x.createRadialGradient(64, 64, 0, 64, 64, 64);
@@ -109,13 +122,13 @@ const glowMat = fading(new THREE.SpriteMaterial({ map: glowTexture(), depthWrite
 const poleMat = fading(new THREE.MeshStandardMaterial({ color: 0x2a1c12, emissive: COL.orange, emissiveIntensity: 0.15 }));
 const headMat = fading(new THREE.MeshBasicMaterial({ color: 0xfff1cf }));
 [[1, 1], [1, -1], [-1, 1], [-1, -1]].forEach(([sx, sz]) => {
-  const x = sx * (FW / 2 + D + 0.5), z = sz * (FL / 2 + D + 0.5), H = 5.2;
+  const x = sx * (SW / 2 + D + 0.5), z = sz * (FL / 2 + D + 0.5), H = 5.2;
   const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.1, H, 10), poleMat); pole.position.set(x, H / 2, z); stadium.add(pole);
   const head = new THREE.Mesh(new THREE.BoxGeometry(1.0, 0.55, 0.12), headMat); head.position.set(x, H, z); head.lookAt(0, 0, 0); stadium.add(head);
   const glow = new THREE.Sprite(glowMat); glow.position.set(x, H, z); glow.scale.setScalar(1.6); stadium.add(glow);
 });
 
-// ツマミ（02）：正面スタンドの前に並ぶ、用意された操作盤
+// ツマミ（05）：正面スタンドの前に並ぶ、用意された操作盤
 const knobs = [];
 for (let i = 0; i < 4; i++) {
   const g = new THREE.Group();
@@ -124,9 +137,10 @@ for (let i = 0; i < 4; i++) {
   ptr.position.set(0, 0.11, -0.12); const dial = new THREE.Group(); dial.add(body, ptr); g.add(dial); g.userData.dial = dial;
   scene.add(g); knobs.push(g);
 }
+const knobX = i => -2.55 + 1.7 * i, knobZ = FL / 2 + D + 0.9;
 
-// 更新の走査面（03）
-const scan = new THREE.Mesh(new THREE.PlaneGeometry(FW + 2 * D + 1, 4), new THREE.MeshBasicMaterial({ color: COL.orange, transparent: true, opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide }));
+// 更新の走査面（07）
+const scan = new THREE.Mesh(new THREE.PlaneGeometry(SW + 2 * D + 1, 4), new THREE.MeshBasicMaterial({ color: COL.orange, transparent: true, opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide }));
 scene.add(scan);
 
 // ---------- 作戦ボード（ホワイトボード）：陣形と、足したルールの付箋を描く ----------
@@ -142,7 +156,7 @@ function makeBoard(tilt) {
 // 付箋の位置：8枚までは右の余白、それ以上は陣形の上に重なる（付箋だらけ）
 const NOTE_SPOTS = [[440, 22], [518, 34], [440, 114], [518, 126], [440, 206], [518, 218], [440, 298], [518, 310], [120, 70], [250, 220]];
 function drawBoard(b, F, notes) {
-  const key = F.map(p => p[0].toFixed(3) + p[1].toFixed(3)).join() + notes.join();
+  const key = F.map(q => q[0].toFixed(3) + q[1].toFixed(3)).join() + notes.join();
   if (key === b.key) return; b.key = key;
   const x = b.ctx;
   x.fillStyle = '#eef3f7'; x.fillRect(0, 0, 600, 400);
@@ -166,7 +180,7 @@ function drawBoard(b, F, notes) {
 
 // ---------- クラブハウス（作戦ボードを書く場所） ----------
 fadeTo = venue.club;
-const CX = -(FW / 2 + D + 4.2), CZ = -1.2;
+const CX = -(SW / 2 + D + 4.2), CZ = -1.2;
 const club = new THREE.Group(); club.position.set(CX, 0, CZ); scene.add(club);
 const clubLine = fading(lineMat(COL.cyan, 0.7));
 const clubBody = withEdges(new THREE.Mesh(new THREE.BoxGeometry(3.6, 1.8, 4.4), fading(new THREE.MeshStandardMaterial({ color: 0x0c1c28, emissive: COL.cyan, emissiveIntensity: 0.05, opacity: 0.85 }))), clubLine);
@@ -177,11 +191,9 @@ clubBody.position.y = 0.9; club.add(clubBody);
   const roof = withEdges(new THREE.Mesh(roofGeo, fading(new THREE.MeshStandardMaterial({ color: 0x0e2231, emissive: COL.cyan, emissiveIntensity: 0.08 }))), clubLine);
   roof.position.y = 1.8; club.add(roof);
 }
-// 窓の明かりと扉
 const winMat = fading(new THREE.MeshBasicMaterial({ color: 0xbfefff, opacity: 0.55 }));
 [-0.9, 0.9].forEach(x => { const w = new THREE.Mesh(new THREE.PlaneGeometry(0.8, 0.5), winMat); w.position.set(x, 1.05, 2.21); club.add(w); });
 { const door = new THREE.Mesh(new THREE.PlaneGeometry(0.6, 1.0), fading(new THREE.MeshBasicMaterial({ color: 0x2d5f78 }))); door.position.set(0, 0.5, 2.21); club.add(door); }
-// クラブハウスの前に立てた作戦ボード
 const whiteboard = new THREE.Group(); whiteboard.position.set(CX + 0.4, 0, CZ + 3.9); scene.add(whiteboard);
 const clubBoard = makeBoard(-0.12);
 fading(clubBoard.mat); fading(clubBoard.edge);
@@ -192,17 +204,10 @@ clubBoard.face.position.y = 1.9; whiteboard.add(clubBoard.face);
 }
 drawBoard(clubBoard, F442, []);
 
-// 案件ごとのボード（04）：作戦ボードから4枚に分かれる
-const caseBoards = [];
-const caseMat = new THREE.MeshBasicMaterial({ color: 0xdbe8f0, transparent: true, side: THREE.DoubleSide });
-const caseLine = lineMat(COL.cyan, 0.9);
-for (let k = 0; k < 4; k++) {
-  const b = withEdges(new THREE.Mesh(new THREE.PlaneGeometry(1.25, 0.85), caseMat), caseLine);
-  b.visible = false; scene.add(b); caseBoards.push(b);
-}
-
-// ---------- 選手 ----------
-const playerMat = new THREE.MeshStandardMaterial({ color: COL.text, emissive: COL.text, emissiveIntensity: 0.35, roughness: 0.35 });
+// ---------- 2つの試合：共通の作戦ボード1枚で、ゲーム制作とアプリ開発を戦う ----------
+const SIDE = ['ゲーム制作', 'アプリ開発'];   // 0＝左、1＝右
+const sideX = s => (s ? 1 : -1) * SEP;
+const TB = { y: 4.4, z: -PL / 2 - 1.9, s: 1.7 };   // 作戦ボードの高さ・奥行き・大きさ
 const ballGeo = new THREE.SphereGeometry(0.21, 28, 18);
 const makeTeam = mat => Array.from({ length: 10 }, () => { const m = new THREE.Mesh(ballGeo, mat); scene.add(m); return m; });
 function makeGK(mat) {
@@ -212,60 +217,62 @@ function makeGK(mat) {
   r.rotation.x = Math.PI / 2; g.add(r); scene.add(g);
   return g;
 }
-const players = makeTeam(playerMat);
-const gk = makeGK(playerMat);
 const [GX, GZ] = at(0.5, 0.955);
-
-// ---------- 2つの試合（05〜06）：共通の作戦ボード1枚で、ゲーム制作とアプリ開発を戦う ----------
-const SIDE = ['ゲーム制作', 'アプリ開発'];   // 0＝左、1＝右
-const SEP = 4.4;                            // 左右のピッチの中心（x）
-const TB = { y: 3.3, z: -PL / 2 - 1.9, s: 1.7 };   // 作戦ボードの高さ・奥行き・大きさ
-const twinPitch = SIDE.map(() => flat(new THREE.MeshBasicMaterial({ map: pitchTex })));
-const twinMat = SIDE.map(() => new THREE.MeshStandardMaterial({ color: COL.text, emissive: COL.text, emissiveIntensity: 0.35, roughness: 0.35 }));
-const twinTeam = twinMat.map(makeTeam);
-const twinGK = twinMat.map(makeGK);
-const twinRedMat = SIDE.map(() => new THREE.MeshStandardMaterial({ color: COL.red, emissive: COL.red, emissiveIntensity: 0.5, transparent: true }));
-const twinReds = twinRedMat.map(m => Array.from({ length: 3 }, () => { const r = new THREE.Mesh(ballGeo, m); scene.add(r); return r; }));
-const twinBall = SIDE.map(() => { const b = new THREE.Mesh(new THREE.SphereGeometry(0.1, 16, 12), new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true })); scene.add(b); return b; });
+const pitchMats = SIDE.map(() => new THREE.MeshBasicMaterial({ map: pitchTex, transparent: true }));
+const pitches = pitchMats.map((m, s) => { const f = flat(m); f.position.x = sideX(s); return f; });
+const teamMat = SIDE.map(() => new THREE.MeshStandardMaterial({ color: COL.text, emissive: COL.text, emissiveIntensity: 0.35, roughness: 0.35 }));
+const teams = teamMat.map(makeTeam);
+const keepers = teamMat.map(makeGK);
+const redMat = SIDE.map(() => new THREE.MeshStandardMaterial({ color: COL.red, emissive: COL.red, emissiveIntensity: 0.5, transparent: true }));
+const reds = redMat.map(m => Array.from({ length: 3 }, () => { const r = new THREE.Mesh(ballGeo, m); scene.add(r); return r; }));
+const balls = SIDE.map(() => { const b = new THREE.Mesh(new THREE.SphereGeometry(0.1, 16, 12), new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true })); scene.add(b); return b; });
 const sharedBoard = makeBoard(-0.5);
 const ownBoard = SIDE.map(() => makeBoard(-0.5));
 [sharedBoard, ...ownBoard].forEach(b => { b.face.visible = false; b.face.scale.setScalar(TB.s); scene.add(b.face); });
 const linkMat = new THREE.LineDashedMaterial({ color: COL.cyan, dashSize: 0.3, gapSize: 0.2, transparent: true });
 const links = SIDE.map(() => { const l = new THREE.Line(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(), new THREE.Vector3(0, 1, 0)]), linkMat); scene.add(l); return l; });
 
-// 共通のボードに貼られていく付箋と、貼られる g
-const PILE = [['確認', 5.29], ['止まるな', 5.52], ...['片づけ', '重い処理', '記録', '言葉づかい', '命名', '報告', '手順', '禁止事項'].map((n, i) => [n, 6.02 + 0.02 * i])];
+// 付箋：02章で「確認」「止まるな」、03章で8枚。ボードが1枚のあいだは、両方の試合に同じ陣形が効く
+const EXTRA = ['片づけ', '重い処理', '記録', '言葉づかい', '命名', '報告', '手順', '禁止事項'];
 const OWN_NOTE = ['止まるな', '確認'];
 const OWN_FORM = [F433, F541];
-// ボードが1枚のあいだは、両方の試合に同じ陣形が効く
+function pileAt(g) {
+  const notes = [];
+  if (g >= p(2, 1, 0.1)) notes.push('確認');
+  if (g >= p(2, 4, 0.1)) notes.push('止まるな');
+  EXTRA.forEach((n, i) => { if (g >= p(3, 0, 0.1 + 0.8 * i / EXTRA.length)) notes.push(n); });
+  return notes;
+}
 function sharedForm(g) {
-  const hold = ramp(g, 5.30, 5.35) * (1 - ramp(g, 5.53, 5.57));   // 確認：下がって待つ
-  const push = ramp(g, 5.53, 5.58) * (1 - ramp(g, 6.10, 6.24));   // 止まるな：前へ出る
-  return mix(shift(F442, 0.08 * hold - 0.13 * push), F811, ease(ramp(g, 6.10, 6.24)));
+  const hold = ramp(g, p(2, 1, 0.15), p(2, 1, 0.35)) * (1 - ramp(g, p(2, 4, 0.1), p(2, 4, 0.3)));   // 確認：下がって待つ
+  const push = ramp(g, p(2, 4, 0.2), p(2, 4, 0.45)) * (1 - ramp(g, p(3, 2), p(3, 2, 0.5)));        // 止まるな：前へ出る
+  return mix(shift(F442, 0.08 * hold - 0.13 * push), F811, ease(ramp(g, p(3, 2), p(3, 2, 0.5))));
 }
-// ボードを分けたあとは、それぞれの試合の陣形へ。07章の前に1つのピッチへ戻る
-function twinForm(s, g) {
-  const own = ease(ramp(g, 6.54, 6.64)), back = ease(ramp(g, 6.95, 7.05));
-  return mix(mix(sharedForm(g), OWN_FORM[s], own), F442, back);
-}
-// 試合の出来事：concede＝失点、block＝守れた、score＝得点
-const EVENTS = [
-  { s: 1, type: 'concede', a: 5.10, b: 5.24 },   // アプリ開発：確かめずに進めて失点
-  { s: 1, type: 'block', a: 5.33, b: 5.48 },     // ＋確認 → アプリ開発は守れる
-  { s: 0, type: 'score', a: 5.57, b: 5.72 },     // ＋止まるな → ゲーム制作は点が取れる
-  { s: 1, type: 'concede', a: 5.57, b: 5.72 },   //            → アプリ開発はカウンターで失点
-  { s: 0, type: 'concede', a: 6.30, b: 6.46 },   // 8-1-1 → 両方とも失点
-  { s: 1, type: 'concede', a: 6.30, b: 6.46 },
-  { s: 0, type: 'score', a: 6.70, b: 6.86 },     // ボードを分ける → 両方とも勝つ
-  { s: 1, type: 'block', a: 6.70, b: 6.86 },
+// ボードを分けたあとは、それぞれの試合の陣形のまま最後まで戦う
+const ownFrom = s => p(4, 1 + s);
+function sideForm(s, g) { return mix(sharedForm(g), OWN_FORM[s], ease(ramp(g, ownFrom(s), ownFrom(s) + 0.05))); }
+
+// 試合の出来事：concede＝失点、block＝守れた、score＝得点。窓は台本の行
+const events = () => [
+  { s: 1, type: 'concede', w: L(2, 0, 0.1, 0.9) },   // アプリ開発：確かめずに進めて失点
+  { s: 1, type: 'block', w: L(2, 2, 0.05, 0.9) },    // ＋確認 → アプリ開発は守れる
+  { s: 0, type: 'score', w: L(2, 5, 0.05, 0.9) },    // ＋止まるな → ゲーム制作は点が取れる
+  { s: 1, type: 'concede', w: L(2, 5, 0.05, 0.9) },  //            → アプリ開発はカウンターで失点
+  { s: 0, type: 'concede', w: L(3, 3, 0.05, 0.9) },  // 8-1-1 → 両方とも失点
+  { s: 1, type: 'concede', w: L(3, 3, 0.05, 0.9) },
+  { s: 0, type: 'score', w: L(4, 3, 0.05, 0.9) },    // ボードを分ける → 両方とも勝つ
+  { s: 1, type: 'block', w: L(4, 3, 0.05, 0.9) },
 ];
 const RESULT = { concede: ['bad', '失点', 0.86], block: ['good', '守れた', 0.66], score: ['good', '得点', 0.26] };
 
-// 審判（07）
-const referee = new THREE.Group();
-referee.add(new THREE.Mesh(new THREE.SphereGeometry(0.25, 24, 16), new THREE.MeshStandardMaterial({ color: 0x15130a, emissive: COL.yellow, emissiveIntensity: 0.15 })));
-const rring = new THREE.Mesh(new THREE.TorusGeometry(0.36, 0.05, 10, 44), new THREE.MeshBasicMaterial({ color: COL.yellow }));
-rring.rotation.x = Math.PI / 2; referee.add(rring); scene.add(referee);
+// 審判（06）：両方の試合に1人ずつ
+const referees = SIDE.map(() => {
+  const r = new THREE.Group();
+  r.add(new THREE.Mesh(new THREE.SphereGeometry(0.25, 24, 16), new THREE.MeshStandardMaterial({ color: 0x15130a, emissive: COL.yellow, emissiveIntensity: 0.15 })));
+  const ring = new THREE.Mesh(new THREE.TorusGeometry(0.36, 0.05, 10, 44), new THREE.MeshBasicMaterial({ color: COL.yellow }));
+  ring.rotation.x = Math.PI / 2; r.add(ring); scene.add(r);
+  return r;
+});
 
 // ---------- 文字（3Dの位置に合わせて置く） ----------
 const tags = [];
@@ -274,82 +281,108 @@ function tag(cls, text, anchor, alpha) {
   tagLayer.append(el); tags.push({ el, text, anchor, alpha });
 }
 const v3 = new THREE.Vector3();
-const S = { lift: 0, sy: 1, pY: 0.21, split: 0, bsplit: 0 };
+const S = { sy: 1, pY: 0.21, bsplit: 0 };
 const rnd = (i, k) => { const v = Math.sin(i * 127.1 + k * 311.7) * 43758.5453; return v - Math.floor(v); };
 const standTop = () => stadium.position.y + HS * S.sy;
-const wbTop = () => [whiteboard.position.x, 3.2, whiteboard.position.z];
-const sideX = s => (s ? 1 : -1) * SEP * S.split;
 const boardX = s => (s ? 1 : -1) * SEP * S.bsplit;
+const boardTop = () => [0, TB.y + 1.1 * TB.s, TB.z - 0.6 * TB.s];
+const boardFoot = () => [0, TB.y - 1.1 * TB.s, TB.z + 0.6 * TB.s];
 
-tag('rule', g => (g >= 7.9 ? 'スタジアム＝公式のハーネス：変えられない' : 'スタジアム＝公式のハーネス（Claude Code）'), () => [FW / 2 + D * 0.6, standTop() + 1.6, -FL / 2 - D * 0.6], g => clamp(band(g, 0.85, 4.1, 0.15) + band(g, 7.9, 9.9, 0.15)));
-tag('rule', '変えられない', () => [0, standTop() + 1.4, -FL / 2 - D], g => band(g, 1.95, 3.05, 0.1));
-['モデル', '考える深さ', '許可', '道具'].forEach((n, i) => tag('rule', n, () => [-2.55 + 1.7 * i, 0.9, FL / 2 + D + 0.9], g => band(g, 1.95, 3.05, 0.1)));
-tag('rule', '更新 v2.1.283：/doctor prompt-audit', () => [0, standTop() + 1.6, scan.position.z], g => band(g, 3.15, 4.05, 0.08));
-tag('model', '選手の成長（新しいモデル）', () => [0, S.pY + 1.1, -0.4], g => band(g, 3.55, 4.02, 0.08));
-tag('model', '選手＝モデル', () => [PW / 2 - 0.6, S.pY + 0.7, -1.6], g => band(g, 0.95, 2.0, 0.12));
-tag('board', 'クラブハウス＝自分で書く場所', () => [CX, 3.4, CZ - 1.2], g => clamp(band(g, 0.85, 2.0, 0.12) + band(g, 7.9, 9.9, 0.15)));
-tag('board', '作戦ボード（CLAUDE.md・スキル・フック）', wbTop, g => band(g, 0.9, 2.0, 0.12));
-tag('board', '共通のボード（全体用）', wbTop, g => band(g, 3.95, 4.98, 0.12));
-tag('board', '案件ごとのボード', () => [whiteboard.position.x, 5.1, whiteboard.position.z + 0.6], g => band(g, 4.15, 4.98, 0.1));
-['ゲーム制作', 'アプリ開発', '資料づくり', '広報'].forEach((n, k) => tag('board', n, () => { const p = caseBoards[k].position; return [p.x, p.y - 0.62, p.z]; }, g => band(g, 4.2, 4.98, 0.1)));
-tag('board', '作戦ボード：毎日組み直す', wbTop, g => band(g, 8.05, 9.9, 0.12));
-
-// 05〜06：2つの試合
-SIDE.forEach((n, s) => tag('model', `${n}の試合`, () => [sideX(s), 0.1, -PL / 2 - 0.5], g => band(g, 5.05, 6.96, 0.05)));
-tag('board', '共通の作戦ボード（1枚）', () => [0, TB.y + 1.1 * TB.s, TB.z - 0.6 * TB.s], g => band(g, 5.05, 6.55, 0.04));
-tag('add', '＋確認のルール', () => [0, TB.y - 1.1 * TB.s, TB.z + 0.6 * TB.s], g => band(g, 5.27, 5.40, 0.02));
-tag('add', '＋止まるなのルール', () => [0, TB.y - 1.1 * TB.s, TB.z + 0.6 * TB.s], g => band(g, 5.50, 5.63, 0.02));
-[8, 6, 1].forEach((i, k) => tag('wait', '確認待ち…', () => { const p = twinTeam[0][i].position; return [p.x, 0.85, p.z]; }, g => band(g, 5.34 + 0.02 * k, 5.53, 0.02)));
-tag('res bad', '攻めきれない', () => [sideX(0), 1.1, -PL * 0.3], g => band(g, 5.40, 5.53, 0.02));
-EVENTS.forEach(e => {
-  const [cls, text, v] = RESULT[e.type];
-  tag(`res ${cls}`, text, () => [sideX(e.s), 1.1, (v - 0.5) * PL], g => ramp(g, lerp(e.a, e.b, 0.62), lerp(e.a, e.b, 0.72)) * (1 - ramp(g, e.b + 0.015, e.b + 0.045)));
+// 01：同じボードで、2つの試合
+SIDE.forEach((n, s) => tag('model', `${n}の試合`, () => [sideX(s), 0.1, -PL / 2 - 0.5], g => ramp(g, p(1, s), p(1, s) + 0.04) * (1 - ramp(g, 4.94, 5.0))));
+tag('model', '選手＝モデル', () => { const q = teams[1][9].position; return [q.x, q.y + 0.7, q.z]; }, g => during(g, 1, 2));
+tag('board', 'クラブハウス＝自分で書く場所', () => [CX, 3.4, CZ - 1.2], g => during(g, 1, 3));
+tag('board', '作戦ボード（CLAUDE.md・メモリ・スキル・フック）', boardTop, g => during(g, 1, 3));
+tag('board', '作戦ボード（1枚）', boardTop, g => span(g, p(1, 4), p(4, 0, 0.15)));
+// 02：ルールを1つ足す
+tag('add', '＋確認のルール', boardFoot, g => during(g, 2, 1));
+tag('add', '＋止まるなのルール', boardFoot, g => during(g, 2, 4));
+[8, 6, 1].forEach((i, k) => tag('wait', '確認待ち…', () => { const q = teams[0][i].position; return [q.x, 0.85, q.z]; }, g => band(g, p(2, 3, 0.05 * k), L(2, 3)[1], 0.02)));
+tag('res bad', '攻めきれない', () => [sideX(0), 1.1, -PL * 0.3], g => during(g, 2, 3));
+events().forEach((_, k) => {
+  const { s, type } = events()[k], [cls, text, v] = RESULT[type];
+  tag(`res ${cls}`, text, () => [sideX(s), 1.1, (v - 0.5) * PL], g => {
+    const [a, b] = events()[k].w;
+    return ramp(g, lerp(a, b, 0.55), lerp(a, b, 0.68)) * (1 - ramp(g, b + 0.01, b + 0.04));
+  });
 });
-tag('fm', '確認＝足かせ ／ 止まるな＝助け', () => [sideX(0), 0.1, PL / 2 + 0.75], g => band(g, 5.77, 5.99, 0.04));
-tag('fm', '確認＝助け ／ 止まるな＝足かせ', () => [sideX(1), 0.1, PL / 2 + 0.75], g => band(g, 5.77, 5.99, 0.04));
-tag('board', '気づけば、最大公倍数', () => [0, TB.y - 1.1 * TB.s, TB.z + 0.6 * TB.s], g => band(g, 6.06, 6.28, 0.03));
-tag('big', '8-1-1', () => [0, 1.6, -1.5], g => band(g, 6.18, 6.50, 0.03));
-SIDE.forEach((n, s) => tag('board', `${n}のボード`, () => [boardX(s), TB.y + 1.1 * TB.s, TB.z - 0.6 * TB.s], g => band(g, 6.58, 6.96, 0.03)));
-['4-3-3', '5-4-1'].forEach((f, s) => tag('fm', 'この試合の最適　' + f, () => [sideX(s), 0.1, PL / 2 + 0.75], g => band(g, 6.62, 6.96, 0.03)));
-
-// 07：審判
-tag('ref', '審判＝フック', () => { const [x, z] = at(.5, .47); return [x, 1.05, z]; }, g => band(g, 7.02, 8.06, 0.06));
-tag('whistle', 'ピッ', () => { const [x, z] = at(.66, .40); return [x, 0.9, z]; }, g => band(g, 7.18, 7.34, 0.03));
+tag('fm', '確認＝足かせ ／ 止まるな＝助け', () => [sideX(0), 0.1, PL / 2 + 0.75], g => during(g, 2, 6));
+tag('fm', '確認＝助け ／ 止まるな＝足かせ', () => [sideX(1), 0.1, PL / 2 + 0.75], g => during(g, 2, 6));
+// 03：最大公倍数
+tag('board', '最大公倍数', boardFoot, g => during(g, 3, 1));
+tag('big', '8-1-1', () => [0, 1.6, -1.5], g => span(g, p(3, 2, 0.3), L(3, 4)[1], 0.03));
+// 04：ボードを分ける
+SIDE.forEach((n, s) => tag('board', `${n}のボード`, () => [boardX(s), TB.y + 1.1 * TB.s, TB.z - 0.6 * TB.s], g => span(g, ownFrom(s), 5.0)));
+['4-3-3', '5-4-1'].forEach((f, s) => tag('fm', 'この試合の最適　' + f, () => [sideX(s), 0.1, PL / 2 + 0.75], g => span(g, p(4, 3), 5.0)));
+// 05：変えられない地面と、4つのツマミ
+tag('rule', 'スタジアム＝公式のハーネス（Claude Code）', () => [SW / 2 + D * 0.6, standTop() + 1.6, -FL / 2 - D * 0.6], g => span(g, p(5, 0), L(5, 1)[1]));
+tag('rule', '変えられない', () => [0, standTop() + 1.4, -FL / 2 - D], g => during(g, 5, 1));
+const KNOBS = ['モデル', '考える深さ', '許可', '道具'];
+const knobTurn = (i, g) => ease(ramp(g, p(5, 3, i / 4), p(5, 3, (i + 0.8) / 4)));
+const knobsOn = g => span(g, p(5, 2), 6.0);
+KNOBS.forEach((n, i) => tag('rule knob', n, () => [knobX(i), 0.9, knobZ], g => {
+  const on = knobsOn(g);
+  const active = band(g, p(5, 3, i / 4), p(5, 3, (i + 1) / 4), 0.01);
+  return on * (g < p(5, 3) ? 0.5 : g > L(5, 3)[1] ? 1 : 0.35 + 0.65 * Math.max(active, knobTurn(i, g) * (g > p(5, 3, (i + 1) / 4) ? 0.6 : 0)));
+}));
+// 06：審判
+tag('ref', '審判＝フック', () => { const [x, z] = at(.5, .47); return [sideX(0) + x, 1.05, z]; }, g => span(g, p(6, 0), 7.0, 0.05));
+tag('whistle', 'ピッ', () => { const [x, z] = at(.66, .40); return [sideX(1) + x, 0.9, z]; }, g => during(g, 6, 1, 0.02));
 for (let i = 0; i < 14; i++) {
-  const st = 7.46 + i * 0.025;
-  tag('whistle', 'ピッ', () => { const [x, z] = at(0.12 + 0.76 * rnd(i, 1), 0.1 + 0.8 * rnd(i, 2)); return [x, 0.7, z]; }, g => band(g, st, st + 0.14, 0.02) * (1 - ramp(g, 7.86, 7.95)));
+  tag('whistle', 'ピッ', () => { const [x, z] = at(0.12 + 0.76 * rnd(i, 1), 0.1 + 0.8 * rnd(i, 2)); return [sideX(i % 2) + x, 0.7, z]; },
+    g => band(g, p(6, 2, 0.05 + 0.05 * i), Math.min(p(6, 2, 0.05 + 0.05 * i + 0.25), L(6, 2)[1]), 0.01));
 }
-tag('stop', '試合が止まる', () => [0, 0.8, 0.6], g => ramp(g, 7.6, 7.7) * (1 - ramp(g, 7.98, 8.12)));
-tag('ref', '笛の加減は、人が決める', () => [0, 0.1, PL / 2 + 0.4], g => band(g, 7.8, 8.05, 0.04));
+tag('stop', '試合が止まる', () => [0, 0.8, 0.6], g => during(g, 6, 2));
+tag('ref', '笛の加減は、人が決める', () => [0, 0.1, PL / 2 + 0.4], g => during(g, 6, 3));
+// 07：明日は、相手が変わる
+tag('rule', '更新 v2.1.283：/doctor prompt-audit', () => [0, standTop() + 1.6, scan.position.z], g => during(g, 7, 1));
+tag('model', '選手の成長（新しいモデル）', () => { const q = teams[0][8].position; return [q.x, q.y + 1.0, q.z]; }, g => band(g, p(7, 1, 0.4), L(7, 1)[1], 0.03));
+tag('rule', 'スタジアム＝公式のハーネス：変えられない', () => [SW / 2 + D * 0.6, standTop() + 1.6, -FL / 2 - D * 0.6], g => span(g, p(7, 3), 8.2));
+tag('board', '作戦ボード：毎日組み直す', () => [boardX(0), TB.y + 1.1 * TB.s, TB.z - 0.6 * TB.s], g => span(g, p(7, 3), 8.2));
 
 // ---------- カメラ（g ごとの見る場所） ----------
-// tx/tz＝見る先。d＝距離（dm はスマホ）。05〜06章は2つのピッチが両方入る位置で止める。
-const TWIN = { az: 0, el: 0.98, d: 36, dm: 34, tx: 0, tz: -1.6 };
-const CAM = [
-  [0.5, { az: 0.42, el: 0.62, d: 29, tx: -3.5, tz: 0 }],             // 00 はじめ
-  [1.5, { az: -0.35, el: 0.5, d: 30, tx: -3.5, tz: 0 }],             // 01 3つの層
-  [2.5, { az: 0.5, el: 0.55, d: 24, tx: 0, tz: 1 }],                 // 02 ことわり
-  [3.5, { az: 0.22, el: 0.72, d: 25, tx: 0, tz: 0 }],                // 03 変わる
-  [4.5, { az: -0.3, el: 0.3, d: 18, tx: CX + 0.6, tz: CZ + 2.5 }],   // 04 ボード
-  [4.97, TWIN], [6.97, TWIN],                                          // 05〜06 2つの試合
-  [7.5, { az: -0.22, el: 0.96, d: 25, tx: 0, tz: 0.3 }],             // 07 審判
-  [8.5, { az: 0.42, el: 0.6, d: 29, tx: -3.5, tz: 0 }],              // 08 まとめ
-];
-CAM.forEach(([, c]) => { c.dm ??= c.d * 1.3; });
+// tx/tz＝見る先。d＝距離（dm はスマホ）。
+const WIDE = { az: 0.36, el: 0.62, d: 50, tx: -2.4, tz: 0, dm: 62, mx: -4 };
+const TWIN = { az: 0, el: 0.98, d: 44, tx: 2.8, tz: -1.4, dm: 41, mx: 0 };
+const CLUB = { az: -0.3, el: 0.62, d: 44, tx: -5.2, tz: -1, dm: 52, mx: -7 };
+const STAND = { az: 0.42, el: 0.46, d: 42, tx: 2.6, tz: 3, dm: 46, mx: 0 };
+function camKeys() {
+  return [
+    [0.35, WIDE], [1.0, TWIN], [p(1, 3), TWIN], [p(1, 3, 0.35), CLUB], [p(1, 4), CLUB], [p(1, 4, 0.45), TWIN],
+    [5.0, TWIN], [p(5, 0, 0.4), STAND], [L(5, 3)[1], STAND], [6.15, TWIN], [p(7, 2), TWIN], [p(7, 3), WIDE],
+  ];
+}
 function camAt(g) {
-  if (g <= CAM[0][0]) return CAM[0][1];
-  for (let i = 0; i < CAM.length - 1; i++) {
-    const [g0, a] = CAM[i], [g1, b] = CAM[i + 1];
+  const keys = camKeys();
+  keys.forEach(([, c]) => { c.dm ??= c.d * 1.3; });
+  if (g <= keys[0][0]) return keys[0][1];
+  for (let i = 0; i < keys.length - 1; i++) {
+    const [g0, a] = keys[i], [g1, b] = keys[i + 1];
     if (g > g1) continue;
-    const k = ease((g - g0) / (g1 - g0)), o = {};
+    const k = ease(clamp((g - g0) / Math.max(1e-4, g1 - g0))), o = {};
     for (const key in a) o[key] = lerp(a[key], b[key], k);
     return o;
   }
-  return CAM[CAM.length - 1][1];
+  return keys[keys.length - 1][1];
+}
+
+// ---------- ナビ：1日の回し方（横）と、見ている層（縦） ----------
+const DAY = ['see', 'see', 'write', 'write', 'write', 'turn', 'ref', 'next'];
+const dayAt = g => (g >= p(7, 2) ? 'see' : DAY[clamp(Math.floor(g), 0, CHAPTERS - 1)]);
+function layerAt(g) {
+  const c = Math.floor(g);
+  if (c <= 0) return 'pitch';
+  if (c === 1) return g >= p(1, 3) ? 'board' : 'pitch';
+  if (c <= 4) return 'board';
+  if (c === 5) return g >= p(5, 2) ? 'knob' : 'stadium';
+  if (c === 6) return 'board';
+  if (g < p(7, 1)) return 'pitch';
+  return g < p(7, 2) ? 'stadium' : 'board';
 }
 
 // ---------- 大きさとスクロール ----------
 let W = 0, H = 0, tops = [], hs = [], queued = false, mobile = false;
+const probe = () => innerHeight * (mobile ? 0.73 : 0.5);
 function measure() {
   W = canvas.clientWidth; H = canvas.clientHeight; mobile = innerWidth < 900;
   renderer.setSize(W, H, false);
@@ -360,149 +393,222 @@ function measure() {
   hs = secs.map(s => s.offsetHeight);
 }
 function progress() {
-  const c = window.scrollY + innerHeight * (mobile ? 0.73 : 0.5);
+  const c = window.scrollY + probe();
   let g = 0;
   for (let i = 0; i < secs.length; i++) if (c >= tops[i]) g = i + clamp((c - tops[i]) / hs[i], 0, 0.999);
   const last = tops.length - 1;
-  if (c >= tops[last] + hs[last]) g = 9;
+  if (c >= tops[last] + hs[last]) g = CHAPTERS;
   return g;
 }
 
-// 2つの試合の出来事（相手とボールの動き）
-function playEvent(s, g, on) {
-  const reds = twinReds[s], ball = twinBall[s];
-  reds.forEach(r => { r.visible = false; }); ball.visible = false;
-  const e = on && EVENTS.find(ev => ev.s === s && g >= ev.a - 0.01 && g <= ev.b + 0.03);
-  if (!e) return;
-  const k = ramp(g, e.a, e.b), alpha = band(g, e.a - 0.01, e.b + 0.03, 0.015), ox = sideX(s);
-  twinRedMat[s].opacity = alpha; ball.material.opacity = alpha;
+// 冒頭：床（スタジアム）→ 2つのピッチ → 作戦ボード → 選手、の順に組み上がる
+let intro = reduced ? 1 : 0, introStart = null;
+function introTick(now) {
+  introStart ??= now;
+  intro = Math.min(1, (now - introStart) / 2800);
+  update();
+  if (intro < 1) requestAnimationFrame(introTick);
+}
+
+// 試合の出来事（相手とボールの動き）
+function playEvent(s, g) {
+  const rs = reds[s], ball = balls[s];
+  rs.forEach(r => { r.visible = false; }); ball.visible = false;
+  const e = events().find(ev => ev.s === s && g >= ev.w[0] - 0.01 && g <= ev.w[1] + 0.03);
+  if (!e) return false;
+  const [a, b] = e.w, k = ramp(g, a, b), alpha = band(g, a - 0.01, b + 0.03, 0.015), ox = sideX(s);
+  redMat[s].opacity = alpha; redMat[s].color.setHex(COL.red); redMat[s].emissive.setHex(COL.red); ball.material.opacity = alpha;
   const put = (m, u, v, y) => { const [x, z] = at(u, v); m.position.set(ox + x, y, z); m.visible = true; };
   if (e.type === 'concede') {
     const kk = ease(k);
-    [[.30, .42, .36, .86], [.50, .38, .50, .92], [.70, .42, .64, .86]].forEach(([u0, v0, u1, v1], i) => put(reds[i], lerp(u0, u1, kk), lerp(v0, v1, kk), 0.21));
+    [[.30, .42, .36, .86], [.50, .38, .50, .92], [.70, .42, .64, .86]].forEach(([u0, v0, u1, v1], i) => put(rs[i], lerp(u0, u1, kk), lerp(v0, v1, kk), 0.21));
     put(ball, 0.5, lerp(0.40, 0.99, ease(ramp(k, 0.15, 0.85))), 0.1);
   } else if (e.type === 'block') {
     const kk = ease(ramp(k, 0, 0.55));
-    [[.30, .40, .34, .64], [.50, .36, .50, .60], [.70, .40, .66, .64]].forEach(([u0, v0, u1, v1], i) => put(reds[i], lerp(u0, u1, kk), lerp(v0, v1, kk), 0.21));
+    [[.30, .40, .34, .64], [.50, .36, .50, .60], [.70, .40, .66, .64]].forEach(([u0, v0, u1, v1], i) => put(rs[i], lerp(u0, u1, kk), lerp(v0, v1, kk), 0.21));
     put(ball, 0.5, k < 0.55 ? lerp(0.38, 0.70, ease(k / 0.55)) : lerp(0.70, 0.45, ease((k - 0.55) / 0.45)), 0.1);
   } else {
     const kb = ease(ramp(k, 0.1, 0.85));
     put(ball, lerp(0.5, 0.53, kb), lerp(0.55, 0.0, kb), 0.1);
   }
+  return true;
 }
 
+// ---------- 声（映像として見る） ----------
+let narration = null, audio = null, playing = false, spoken = -1, focus = null;
+const narrationURL = new URL('../narration/harness.json', location.href);
+fetch(narrationURL).then(r => (r.ok ? r.json() : null)).then(data => {
+  if (!data) return;
+  narration = data;
+  // 台本の実際の尺で、章の中の行の位置を置き直す
+  const byCh = LINES.map(() => []);
+  data.lines.forEach(l => byCh[l.chapter]?.push(l));
+  CUE = byCh.map((ls, c) => {
+    if (ls.length !== LINES[c]) return CUE[c];
+    const s0 = ls[0].start, d = Math.max(0.001, ls[ls.length - 1].end - s0);
+    return ls.map(l => [(l.start - s0) / d, (l.end - s0) / d]);
+  });
+  audio = new Audio(new URL(data.audio.split('/').pop(), narrationURL).href);
+  audio.preload = 'metadata'; audio.hidden = true; document.body.append(audio);
+  audio.addEventListener('ended', stop);
+  const note = document.getElementById('play-note');
+  if (note) note.textContent = `音声つき / ${Math.floor(data.duration / 60)}分${String(Math.round(data.duration % 60)).padStart(2, '0')}秒`;
+  update();
+}).catch(() => {});
+function scrollToG(g) {
+  const c = clamp(Math.floor(g), 0, CHAPTERS - 1), f = g - c;
+  // 'instant': the page's smooth scrolling would otherwise trail the voice by seconds
+  window.scrollTo({ top: Math.max(0, tops[c] + f * hs[c] - probe()), behavior: 'instant' });
+}
+function playFrame() {
+  if (!playing) return;
+  const t = audio.currentTime, lines = narration.lines;
+  let i = 0; lines.forEach((l, k) => { if (t >= l.start) i = k; });
+  const cur = lines[i], same = lines.filter(l => l.chapter === cur.chapter);
+  const s0 = same[0].start, d = Math.max(0.001, same[same.length - 1].end - s0);
+  if (i !== spoken) { spoken = i; focus = cur.focus; caption.textContent = cur.text; caption.classList.add('on'); }
+  scrollToG(cur.chapter + clamp((t - s0) / d, 0, 0.999));
+  requestAnimationFrame(playFrame);
+}
+const playButton = document.getElementById('play'), stopButton = document.getElementById('stop-play');
+function stop() {
+  if (!playing) return;
+  playing = false; spoken = -1; focus = null;
+  if (audio) { audio.pause(); audio.currentTime = 0; }
+  caption.classList.remove('on');
+  playButton.setAttribute('aria-pressed', 'false'); stopButton.hidden = true;
+  update();
+}
+playButton.addEventListener('click', () => {
+  if (playing) { stop(); return; }
+  if (!audio) return;
+  measure(); scrollToG(0);
+  audio.currentTime = 0; audio.play().catch(() => {});
+  playing = true; playButton.setAttribute('aria-pressed', 'true'); stopButton.hidden = false;
+  requestAnimationFrame(playFrame);
+});
+stopButton.addEventListener('click', stop);
+for (const ev of ['wheel', 'touchstart']) addEventListener(ev, stop, { passive: true });
+addEventListener('keydown', e => { if (['Escape', 'ArrowDown', 'ArrowUp', 'PageDown', 'PageUp', 'Home', 'End', ' '].includes(e.key)) stop(); });
+document.addEventListener('visibilitychange', () => { if (document.hidden) stop(); });
+
+// ---------- 1コマ ----------
 function update() {
   queued = false;
   const g = progress();
+  const grown = ease(ramp(intro, 0, 0.4)), fields = ramp(intro, 0.25, 0.55), boards = ramp(intro, 0.45, 0.72);
 
-  // スタジアムとクラブハウス：05〜06章のあいだは消して、2つの試合だけを見せる
-  const sf = 1 - band(g, 4.93, 7.1, 0.1), cf = 1 - band(g, 4.93, 7.95, 0.1);
-  venue.stadium.forEach(m => { m.opacity = m.userData.base * sf; });
-  venue.club.forEach(m => { m.opacity = m.userData.base * cf; });
-  stadium.visible = sf > 0.005;
-  club.visible = whiteboard.visible = cf > 0.005;
-
-  // 3つの層を上下に離して見せる（01）：スタジアムは沈み、選手は浮き、クラブハウスはそのまま
-  S.lift = ease(band(g, 0.85, 2.05, 0.3));
-  const rule = clamp(band(g, 0.85, 4.1, 0.15) + band(g, 7.9, 9.9, 0.15));
-  S.sy = 1 + 0.25 * ease(band(g, 1.9, 3.1, 0.2));
-  stadium.position.y = -1.6 * S.lift;
+  // スタジアム：冒頭で地面から立ち上がり、05章でせり上がって光る
+  const st5 = band(g, 5.0, 6.0, 0.06);
+  S.sy = Math.max(0.02, grown) * (1 + 0.25 * ease(st5));
   stadium.scale.y = S.sy;
-  standLine.opacity = (0.35 + 0.55 * rule) * sf;
-  standMat.emissiveIntensity = 0.06 + 0.2 * band(g, 1.9, 3.1, 0.15);
+  venue.stadium.forEach(m => { m.opacity = m.userData.base; });
+  // クラブハウスは出番（01章）と最後の全景だけ。ほかの章では本文の下に入ってしまう
+  const clubVis = ramp(intro, 0.3, 0.6) * (1 - band(g, p(1, 4, 0.6), p(7, 3), 0.15));
+  venue.club.forEach(m => { m.opacity = m.userData.base * clubVis; });
+  club.visible = whiteboard.visible = clubVis > 0.01;
+  standMat.emissiveIntensity = 0.06 + 0.22 * st5;
+  standLine.opacity = 0.35 + 0.5 * st5;
 
-  // ツマミ
-  const a2 = band(g, 1.95, 3.05, 0.1);
+  // ツマミ（05）
+  const kOn = knobsOn(g);
   knobs.forEach((k, i) => {
-    k.visible = a2 > 0.01; k.scale.setScalar(Math.max(0.001, a2));
-    k.position.set(-2.55 + 1.7 * i, 0.12, FL / 2 + D + 0.9);
-    k.userData.dial.rotation.y = -1.2 + 2.2 * ease(clamp(g - 2)) + i * 0.5;
+    k.visible = kOn > 0.01; k.scale.setScalar(Math.max(0.001, kOn));
+    k.position.set(knobX(i), 0.12, knobZ);
+    k.userData.dial.rotation.y = -1.2 + 2.2 * knobTurn(i, g) + i * 0.5;
   });
 
-  // 更新の走査面：スタジアムを奥から手前へなめる
-  const a3 = band(g, 2.95, 3.75, 0.1);
-  scan.material.opacity = 0.2 * a3; scan.visible = a3 > 0.01;
-  scan.position.set(0, 2.0, lerp(-FL / 2 - D, FL / 2 + D, ease(ramp(g, 3.05, 3.55))));
+  // 更新の走査面（07）
+  const a7 = during(g, 7, 1);
+  scan.material.opacity = 0.2 * a7; scan.visible = a7 > 0.01;
+  scan.position.set(0, 2.0, lerp(-FL / 2 - D, FL / 2 + D, ease(ramp(g, p(7, 1, 0.05), p(7, 1, 0.8)))));
 
-  // 選手（01〜04、07〜08）
-  const frz = ramp(g, 7.6, 7.7) * (1 - ramp(g, 7.98, 8.12));
-  pitchMat.color.setScalar(1 - 0.6 * frz);
-  const grow = ramp(g, 3.5, 3.85) * (1 - ramp(g, 4.0, 4.3));
-  S.pY = 0.21 * (1 + 0.45 * grow) + S.lift * 1.6;
-  playerMat.emissiveIntensity = 0.35 + 0.9 * grow;
-  playerMat.color.setScalar(1 - 0.45 * frz); playerMat.emissive.setScalar(1 - 0.5 * frz);
-  players.forEach((p, i) => { const [x, z] = at(...F442[i]); p.position.set(x, S.pY, z); p.scale.setScalar(1 + 0.45 * grow); });
-  gk.position.set(GX, 0.17 + S.lift * 1.6, GZ);
-
-  // 案件ごとのボード（04）
-  const a4 = band(g, 3.95, 4.98, 0.12), sp = ease(ramp(g, 4.0, 4.4));
-  caseBoards.forEach((b, k) => {
-    b.visible = a4 > 0.01;
-    b.position.set(lerp(whiteboard.position.x, whiteboard.position.x - 2.1 + 1.4 * k, sp), lerp(1.9, 4.2, sp), whiteboard.position.z + 0.3);
-    b.scale.setScalar(Math.max(0.001, lerp(0.4, 1, sp)));
-  });
-  caseMat.opacity = a4; caseLine.opacity = 0.9 * a4;
-
-  // 2つの試合（05〜06）：1つのピッチが左右に分かれ、共通のボード1枚から両方へ線が伸びる
-  const twinOn = g >= 4.99 && g < 7.06;
-  S.split = ease(ramp(g, 4.99, 5.09)) * (1 - ease(ramp(g, 6.96, 7.06)));
-  S.bsplit = ease(ramp(g, 6.54, 6.64));
-  pitch.visible = gk.visible = !twinOn;
-  players.forEach(p => { p.visible = !twinOn; });
-  const stall = ramp(g, 5.31, 5.35) * (1 - ramp(g, 5.53, 5.57));   // ゲーム制作：確認待ちで止まる
-  twinMat[0].color.setScalar(1 - 0.4 * stall); twinMat[0].emissiveIntensity = 0.35 - 0.2 * stall;
-  linkMat.opacity = ramp(g, 5.02, 5.1) * (0.45 + 0.5 * band(g, 5.76, 5.99, 0.04));
-  const pile = PILE.filter(([, t]) => g >= t).map(([n]) => n);
-  sharedBoard.face.visible = twinOn && g < 6.54;
-  if (sharedBoard.face.visible) {
-    sharedBoard.mat.opacity = ramp(g, 5.0, 5.08); sharedBoard.edge.opacity = 0.9 * sharedBoard.mat.opacity;
+  // 2つの試合
+  const dim = 1 - 0.5 * st5;                                                      // 05章は地面を見せる
+  const frz = during(g, 6, 2);                                                    // 笛が多すぎて止まる
+  const grow = ramp(g, p(7, 1, 0.3), p(7, 1, 0.6));                               // 新しいモデルで選手が育つ
+  const stall = during(g, 2, 3, 0.02);                                            // 確認待ちで止まる（左）
+  S.bsplit = ease(ramp(g, p(4, 0, 0.1), p(4, 0, 0.6)));
+  const pile = pileAt(g), splitOn = g >= p(4, 0, 0.1);
+  S.pY = 0.21 * (1 + 0.45 * grow);
+  for (let s = 0; s < 2; s++) {
+    const ox = sideX(s), F = sideForm(s, g);
+    pitchMats[s].opacity = fields;
+    pitchMats[s].color.setScalar((1 - 0.6 * frz) * dim * (s === 0 ? 1 - 0.3 * stall : 1));
+    teamMat[s].color.setScalar((1 - 0.45 * frz) * (s === 0 ? 1 - 0.4 * stall : 1));
+    teamMat[s].emissiveIntensity = (0.35 + 0.35 * grow) * (s === 0 ? 1 - 0.55 * stall : 1);
+    teams[s].forEach((pl, i) => {
+      const [x, z] = at(...F[i]);
+      pl.position.set(ox + x, S.pY, z);
+      pl.scale.setScalar(Math.max(0.001, ramp(intro, 0.6 + i * 0.025, 0.78 + i * 0.025)) * (1 + 0.45 * grow));
+    });
+    keepers[s].position.set(ox + GX, 0.17, GZ); keepers[s].scale.setScalar(Math.max(0.001, ramp(intro, 0.6, 0.8)));
+    const b = ownBoard[s];
+    b.face.visible = splitOn;
+    if (splitOn) {
+      b.mat.opacity = boards; b.edge.opacity = 0.9 * boards;
+      b.face.position.set(boardX(s), TB.y, TB.z + 0.02 * (s + 1));
+      drawBoard(b, F, g < ownFrom(s) ? pile : [OWN_NOTE[s]]);
+    }
+    const l = links[s];
+    const fromX = splitOn ? boardX(s) : 0;
+    const pos = l.geometry.attributes.position;
+    pos.setXYZ(0, fromX, TB.y - 0.88 * TB.s, TB.z + 0.48 * TB.s); pos.setXYZ(1, ox, 0.03, -PL / 2 + 1.2); pos.needsUpdate = true;
+    l.computeLineDistances();
+    l.visible = g >= p(1, 4);
+    const event = playEvent(s, g);
+    // 07：明日は相手が変わる（新しい相手が、違う色で入ってくる）
+    const rivals = span(g, p(7, 0), L(7, 1)[1], 0.03);
+    if (!event && rivals > 0.01) {
+      redMat[s].opacity = rivals;
+      const hue = new THREE.Color(COL.red).lerp(new THREE.Color(COL.violet), ease(ramp(g, p(7, 0, 0.1), p(7, 0, 0.6))));
+      redMat[s].color.copy(hue); redMat[s].emissive.copy(hue);
+      [[.30, .30], [.50, .24], [.70, .30]].forEach(([u, v], i) => { const [x, z] = at(u, lerp(0.05, v, ease(ramp(g, p(7, 0), p(7, 0, 0.5))))); reds[s][i].position.set(ox + x, 0.21, z); reds[s][i].visible = true; });
+    }
+  }
+  linkMat.opacity = ramp(g, p(1, 4), p(1, 4, 0.3)) * (0.45 + 0.5 * during(g, 2, 6, 0.04)) * dim;
+  sharedBoard.face.visible = !splitOn;
+  if (!splitOn) {
+    sharedBoard.mat.opacity = boards; sharedBoard.edge.opacity = 0.9 * boards;
     sharedBoard.face.position.set(0, TB.y, TB.z);
     drawBoard(sharedBoard, sharedForm(g), pile);
   }
-  for (let s = 0; s < 2; s++) {
-    const ox = sideX(s), F = twinForm(s, g);
-    twinPitch[s].visible = twinOn; twinPitch[s].position.x = ox;
-    twinTeam[s].forEach((p, i) => { const [x, z] = at(...F[i]); p.position.set(ox + x, 0.21, z); p.visible = twinOn; });
-    twinGK[s].position.set(ox + GX, 0.17, GZ); twinGK[s].visible = twinOn;
-    const b = ownBoard[s];
-    b.face.visible = twinOn && g >= 6.54;
-    if (b.face.visible) { b.face.position.set(boardX(s), TB.y, TB.z + 0.02 * (s + 1)); drawBoard(b, F, g < 6.58 ? pile : [OWN_NOTE[s]]); }
-    const l = links[s]; l.visible = twinOn;
-    if (twinOn) {
-      const pos = l.geometry.attributes.position;
-      pos.setXYZ(0, boardX(s), TB.y - 0.88 * TB.s, TB.z + 0.48 * TB.s); pos.setXYZ(1, ox, 0.03, -PL / 2 + 1.2); pos.needsUpdate = true;
-      l.computeLineDistances();
-    }
-    playEvent(s, g, twinOn);
-  }
 
-  // 審判
-  const ar = band(g, 7.02, 8.06, 0.06);
-  const [rx, rz] = at(.5, .47); referee.position.set(rx, 0.26, rz); referee.visible = ar > 0.01; referee.scale.setScalar(Math.max(0.001, ar));
+  // 審判（06）
+  const ar = span(g, p(6, 0), 7.0, 0.06);
+  referees.forEach((r, s) => { const [x, z] = at(.5, .47); r.position.set(sideX(s) + x, 0.26, z); r.visible = ar > 0.01; r.scale.setScalar(Math.max(0.001, ar)); });
 
   // カメラ
-  const c = camAt(g), dist = mobile ? c.dm : c.d;
-  camera.position.set(c.tx + Math.sin(c.az) * Math.cos(c.el) * dist, Math.sin(c.el) * dist, c.tz + Math.cos(c.az) * Math.cos(c.el) * dist);
-  camera.lookAt(c.tx, mobile ? 0.6 : 0.2, c.tz);
+  const c = camAt(g), dist = mobile ? c.dm : c.d, tx = mobile ? c.mx : c.tx;
+  camera.position.set(tx + Math.sin(c.az) * Math.cos(c.el) * dist, Math.sin(c.el) * dist, c.tz + Math.cos(c.az) * Math.cos(c.el) * dist);
+  camera.lookAt(tx, mobile ? 0.6 : 0.2, c.tz);
   camera.updateMatrixWorld();
 
   renderer.render(scene, camera);
 
-  // 文字
+  // 文字：声が名指ししたものだけを明るく、ほかは下げる
   for (const t of tags) {
-    const a = t.alpha(g);
-    if (a <= 0.01) { t.el.style.opacity = '0'; continue; }
-    if (typeof t.text === 'function') { const s = t.text(g); if (t.el.textContent !== s) t.el.textContent = s; }
+    let a = t.alpha(g);
+    if (a <= 0.01) { t.el.style.opacity = '0'; t.el.classList.remove('focus'); continue; }
+    const text = typeof t.text === 'function' ? t.text(g) : t.text;
+    if (t.el.textContent !== text) t.el.textContent = text;
+    const named = !!focus && text.startsWith(focus);
+    if (focus && !named) a *= 0.3;
+    t.el.classList.toggle('focus', named);
     v3.set(...t.anchor()).project(camera);
     const x = (v3.x * 0.5 + 0.5) * W, y = (-v3.y * 0.5 + 0.5) * H;
     t.el.style.opacity = String(a);
     t.el.style.transform = `translate(${x.toFixed(1)}px,${y.toFixed(1)}px) translate(-50%,-50%)`;
   }
 
-  const ch = Math.floor(g);
-  navs.forEach((a, i) => a.classList.toggle('on', ch === i + 1));
-  stageEl.classList.toggle('off', g >= 9 && mobile);
-  navEl.classList.toggle('gone', g >= 9);
+  const day = dayAt(g), layer = layerAt(g), done = g >= CHAPTERS;
+  dayLinks.forEach(a => a.classList.toggle('on', a.dataset.day === day));
+  layerLinks.forEach(a => a.classList.toggle('on', a.dataset.layer === layer));
+  dayNav.classList.toggle('loop', g >= p(7, 2) && !done);
+  dayNav.classList.toggle('gone', done); layerNav.classList.toggle('gone', done);
+  stageEl.classList.toggle('off', done && mobile);
+  document.documentElement.dataset.chapter = String(Math.min(Math.floor(g), CHAPTERS - 1));
+  document.documentElement.dataset.rendered = 'true';
   const max = document.documentElement.scrollHeight - innerHeight;
   bar.style.width = (max > 0 ? (window.scrollY / max) * 100 : 0) + '%';
 }
@@ -511,3 +617,4 @@ window.addEventListener('scroll', onScroll, { passive: true });
 window.addEventListener('resize', () => { measure(); update(); });
 if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => { measure(); update(); });
 measure(); update();
+if (!reduced) requestAnimationFrame(introTick);
