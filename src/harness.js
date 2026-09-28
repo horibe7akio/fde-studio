@@ -491,8 +491,8 @@ function measure() {
   W = canvas.clientWidth; H = canvas.clientHeight; mobile = innerWidth < 900;
   renderer.setSize(W, H, false);
   grade.setSize(W, H);
-  if (mobile && !EXPLAIN_PAGE) { camera.aspect = W / H; camera.clearViewOffset(); }
-  else if (MOTION || EXPLAIN_PAGE) { camera.aspect = W / H; camera.clearViewOffset(); }
+  if (mobile) { camera.aspect = W / H; camera.clearViewOffset(); }
+  else if (MOTION) { camera.aspect = W / H; camera.clearViewOffset(); }
   else { camera.aspect = (W * 1.5) / H; camera.setViewOffset(W * 1.5, H, 0, 0, W, H); }
   camera.updateProjectionMatrix();
   tops = secs.map(s => s.getBoundingClientRect().top + window.scrollY);
@@ -1094,7 +1094,8 @@ if (EXPLAIN) {
       $('.ex-end').style.opacity = String(ease(ramp(t, endAt + 0.2, endAt + 0.9)));
     } else {
       // ページ：字幕は再生中だけ。ナビは場面で光らせる
-      document.documentElement.classList.toggle('at-hero', sc === 0 && t < 0.2);
+      if (!exPlaying) $('.ex-cap').style.opacity = '0';
+      document.documentElement.classList.toggle('ex-full', sc === 7);
       document.querySelectorAll('[data-scene]').forEach(a => a.classList.toggle('on', Number(a.dataset.scene) === sc));
       const layer = sc === 1 ? (t < T(1, 4) ? 'stadium' : 'board') : sc === 2 || sc === 3 ? 'board' : sc === 6 && t >= T(6, 2) ? 'board' : 'pitch';
       layerLinks.forEach(a => a.classList.toggle('on', a.dataset.layer === layer));
