@@ -1,0 +1,186 @@
+{
+ "engine": "VOICEVOX",
+ "speaker": "離途・シリアス",
+ "speakerId": 101,
+ "credit": "VOICEVOX:離途",
+ "audio": "./narration/harness-explainer.m4a",
+ "duration": 91.6,
+ "lines": [
+  {
+   "chapter": 0,
+   "text": "同じ選手が、ある試合では勝ち、別の試合では負けます。",
+   "beat": null,
+   "focus": null,
+   "start": 0.0,
+   "end": 5.141
+  },
+  {
+   "chapter": 0,
+   "text": "何が違うのでしょう。",
+   "beat": null,
+   "focus": null,
+   "start": 5.561,
+   "end": 7.097
+  },
+  {
+   "chapter": 1,
+   "text": "選手はAIのモデル。",
+   "beat": null,
+   "focus": null,
+   "start": 8.047,
+   "end": 9.733
+  },
+  {
+   "chapter": 1,
+   "text": "できるのは、次に何をするかを答えることだけ。",
+   "beat": null,
+   "focus": null,
+   "start": 10.153,
+   "end": 13.833
+  },
+  {
+   "chapter": 1,
+   "text": "手足になるのは、クラブとスタジアム。",
+   "beat": null,
+   "focus": null,
+   "start": 14.253,
+   "end": 17.197
+  },
+  {
+   "chapter": 1,
+   "text": "公式のハーネス、Claude Codeです。",
+   "beat": null,
+   "focus": null,
+   "start": 17.617,
+   "end": 21.403
+  },
+  {
+   "chapter": 1,
+   "text": "試合の前には、監督が書いた作戦ボードが渡されます。",
+   "beat": null,
+   "focus": null,
+   "start": 21.823,
+   "end": 26.218
+  },
+  {
+   "chapter": 2,
+   "text": "どの試合でも勝てるように、ボードに書き足していく。",
+   "beat": null,
+   "focus": null,
+   "start": 27.168,
+   "end": 30.869
+  },
+  {
+   "chapter": 2,
+   "text": "気づけば、最大公倍数。",
+   "beat": null,
+   "focus": null,
+   "start": 31.289,
+   "end": 33.945
+  },
+  {
+   "chapter": 2,
+   "text": "攻撃的にしようとして、8-1-1。",
+   "beat": null,
+   "focus": null,
+   "start": 34.365,
+   "end": 39.421
+  },
+  {
+   "chapter": 2,
+   "text": "燃費がよくて、速い車のようなハーネスは幻想。",
+   "beat": null,
+   "focus": null,
+   "start": 39.841,
+   "end": 43.692
+  },
+  {
+   "chapter": 3,
+   "text": "ボードに書いた線は、そのまま選手の動きになります。",
+   "beat": null,
+   "focus": null,
+   "start": 44.642,
+   "end": 48.567
+  },
+  {
+   "chapter": 3,
+   "text": "確認しろと書けば止まり、",
+   "beat": null,
+   "focus": null,
+   "start": 48.987,
+   "end": 50.843
+  },
+  {
+   "chapter": 3,
+   "text": "止まるなと書けば走る。",
+   "beat": null,
+   "focus": null,
+   "start": 51.263,
+   "end": 52.81
+  },
+  {
+   "chapter": 4,
+   "text": "でも、相手が違えば、勝てる並びも違います。",
+   "beat": null,
+   "focus": null,
+   "start": 53.76,
+   "end": 58.112
+  },
+  {
+   "chapter": 4,
+   "text": "ミスが許されないアプリ開発には、5-4-1。",
+   "beat": null,
+   "focus": null,
+   "start": 58.532,
+   "end": 63.737
+  },
+  {
+   "chapter": 4,
+   "text": "速さが勝負のゲーム制作には、4-3-3。",
+   "beat": null,
+   "focus": null,
+   "start": 64.157,
+   "end": 69.384
+  },
+  {
+   "chapter": 5,
+   "text": "ボードを試合ごとに分けると、両方とも勝てる。",
+   "beat": null,
+   "focus": null,
+   "start": 70.334,
+   "end": 73.822
+  },
+  {
+   "chapter": 5,
+   "text": "とある案件（試合）で最適なハーネスは、他の試合で最適とはかぎらない。",
+   "beat": null,
+   "focus": null,
+   "start": 74.242,
+   "end": 80.226
+  },
+  {
+   "chapter": 6,
+   "text": "明日は、相手が変わります。",
+   "beat": null,
+   "focus": null,
+   "start": 81.176,
+   "end": 83.757
+  },
+  {
+   "chapter": 6,
+   "text": "スタジアムも、更新で変わっていく。",
+   "beat": null,
+   "focus": null,
+   "start": 84.177,
+   "end": 87.132
+  },
+  {
+   "chapter": 6,
+   "text": "だから監督は、毎日ボードを書き直すのです。",
+   "beat": null,
+   "focus": null,
+   "start": 87.552,
+   "end": 91.179
+  }
+ ]
+}

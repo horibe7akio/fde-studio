@@ -158,3 +158,26 @@ tbody td{color:#c9d4e2}
 #mg .mg-end p{margin:0;font-family:var(--latin);font-size:22px;letter-spacing:.3em;color:var(--cyan)}
 #mg .mg-end h1{margin:0;font-size:120px;font-weight:900;letter-spacing:.04em;color:var(--text)}
 #mg .mg-end span{font-size:26px;color:var(--muted);letter-spacing:.12em}
+
+/* 説明アニメ（?motion&explain） */
+#ex{position:fixed;inset:0;z-index:40;pointer-events:none;font-family:var(--sans)}
+#ex .ex-chip{position:absolute;left:0;top:0;white-space:nowrap;font-size:22px;font-weight:700;padding:8px 16px;border-radius:999px;opacity:0;will-change:transform,opacity}
+#ex .ex-chip.model{color:var(--text);background:#0b1220e6;border:1px solid #e7edf688}
+#ex .ex-chip.bubble{color:#06131a;background:#eef6ff;border-radius:18px;font-size:24px}
+#ex .ex-chip.rule{color:var(--orange);background:#1b120be6;border:1px solid #ffa777aa}
+#ex .ex-chip.board{color:var(--cyan);background:#07161fe6;border:1px solid #96e5ffaa}
+#ex .ex-chip.coach{color:#1a0e04;background:#ffae69}
+#ex .ex-chip.bad{color:#fff;background:#b8313f;font-size:26px}
+#ex .ex-chip.add{color:#06131a;background:var(--cyan)}
+#ex .ex-chip.score{font-family:var(--latin);font-size:26px;color:var(--text);background:#05080fee;border:1px solid #96e5ff66;border-radius:6px;letter-spacing:.04em}
+#ex .ex-chip.score b{color:#ffd84a;font-size:32px;margin:0 6px}
+#ex .ex-q{position:absolute;left:50%;top:40%;transform:translate(-50%,-50%);font-size:220px;font-weight:900;color:#ffd84a;opacity:0;text-shadow:0 10px 60px #000}
+#ex .ex-cal{position:absolute;left:50%;top:14%;transform:translateX(-50%);display:flex;gap:18px;opacity:0}
+#ex .ex-cal i{font-style:normal;width:110px;height:110px;display:grid;place-items:center;font-size:52px;font-weight:900;color:#6f819c;background:#0b1220ee;border:1px solid #96e5ff44;border-radius:12px}
+#ex .ex-cal i.on{color:#06131a;background:var(--cyan);box-shadow:0 0 40px #96e5ff66}
+#ex .ex-cap{position:absolute;left:10%;right:10%;bottom:6vh;margin:0;text-align:center;font-size:34px;font-weight:700;line-height:1.5;color:#fff;text-shadow:0 2px 12px #000,0 0 3px #000;opacity:0}
+#ex .ex-dip{position:absolute;inset:0;background:#02040a;opacity:0}
+#ex .ex-end{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;opacity:0}
+#ex .ex-end p{margin:0;font-family:var(--latin);font-size:26px;letter-spacing:.34em;color:var(--cyan)}
+#ex .ex-end h1{margin:0;font-size:150px;font-weight:900;color:var(--text)}
+#ex .ex-end span{font-size:30px;color:var(--muted);letter-spacing:.14em}

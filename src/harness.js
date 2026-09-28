@@ -2,7 +2,7 @@ import './series.css';
 import './harness.css';
 import * as THREE from 'three';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
-import { createGrade } from './lib/look.js';
+import { createGrade, createFigure } from './lib/look.js';
 import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
 import { HorizontalTiltShiftShader } from 'three/addons/shaders/HorizontalTiltShiftShader.js';
 import { VerticalTiltShiftShader } from 'three/addons/shaders/VerticalTiltShiftShader.js';
@@ -27,6 +27,9 @@ const PARAMS = new URLSearchParams(location.search);
 const MOTION = PARAMS.has('motion');
 // ?drive：通常の画面のまま、スクロールと時刻を外から1コマずつ進める（PV用）。?clean：動画用の文字を重ねない
 const DRIVE = PARAMS.has('drive'), CLEAN = PARAMS.has('clean');
+// ?motion&explain：説明アニメ（7場面）を書き出す
+const EXPLAIN = MOTION && PARAMS.has('explain');
+let camOverride = null, beforeRender = null;
 if (MOTION) document.documentElement.classList.add('motion');
 let gOverride = null;
 
@@ -680,7 +683,7 @@ function update() {
   referees.forEach((r, s) => { const [x, z] = at(.5, .47); r.position.set(sideX(s) + x, 0.26, z); r.visible = ar > 0.01; r.scale.setScalar(Math.max(0.001, ar)); });
 
   // カメラ
-  const c = camAt(g), dist = mobile ? c.dm : c.d, tx = mobile ? c.mx : c.tx;
+  const c = camOverride || camAt(g), dist = mobile ? c.dm : c.d, tx = mobile ? c.mx : c.tx;
   goal.set(tx + Math.sin(c.az) * Math.cos(c.el) * dist, Math.sin(c.el) * dist, c.tz + Math.cos(c.az) * Math.cos(c.el) * dist);
   goalLook.set(tx, c.ty, c.tz);
   const blurPx = (mobile ? 2.6 : 4.2) * c.blur;
@@ -690,6 +693,7 @@ function update() {
   camera.lookAt(look);
   camera.updateMatrixWorld();
 
+  beforeRender?.();
   sky.position.copy(camera.position);
   dust.material.uniforms.uTime.value = clock;
   scene.fog.density = 0.75 / Math.max(10, camera.position.distanceTo(look));
@@ -746,7 +750,7 @@ if (MOTION || DRIVE) {
 }
 
 // ---------- PR動画（?motion） ----------
-if (MOTION && !CLEAN) {
+if (MOTION && !CLEAN && !EXPLAIN) {
   const mg = document.createElement('div'); mg.id = 'mg';
   mg.innerHTML = '<div class="mg-type"></div><div class="mg-dip"></div><div class="mg-end"><p>3Dでわかる</p><h1>ハーネス</h1><span>なぜ毎日組み直すのか</span></div>';
   document.body.append(mg);
@@ -790,4 +794,189 @@ if (MOTION && !CLEAN) {
     end.style.transform = `translateY(${(1 - ease(ramp(t, 27.3, 28.1))) * 16}px)`;
     return true;
   };
+}
+
+
+// ---------- 説明アニメ（?motion&explain）：7場面、中心の因果は「選手は同じでも、渡すボードで結果が変わる」 ----------
+if (EXPLAIN) {
+  tagLayer.style.display = 'none';
+  const ex = document.createElement('div'); ex.id = 'ex';
+  ex.innerHTML = '<div class="ex-labels"></div><div class="ex-q">？</div><div class="ex-cal"><i>月</i><i>火</i><i>水</i></div>'
+    + '<p class="ex-cap"></p><div class="ex-dip"></div><div class="ex-end"><p>3Dでわかる</p><h1>ハーネス</h1><span>サッカーで見る、AIの作戦ボード</span></div>';
+  document.body.append(ex);
+  const $ = sel => ex.querySelector(sel);
+  const chipEl = cls => { const e = document.createElement('div'); e.className = 'ex-chip ' + cls; $('.ex-labels').append(e); return e; };
+  const CH = {};
+  ['player:model', 'bubble:bubble', 'stadium:rule', 'code:rule', 'board:board', 'coach:coach', 'max:board', 'front8:bad', 'check:add', 'go:add',
+    'app:model', 'game:model', 'scoreL:score', 'scoreR:score', 'update:rule'].forEach(x => { const [k, c] = x.split(':'); CH[k] = chipEl(c); });
+
+  // 案内役の監督、光の腕が運ぶ札、ボードから落ちる点、動線
+  const coach = createFigure(0xffae69); coach.group.scale.setScalar(1.3); scene.add(coach.group);
+  const card = new THREE.Mesh(new THREE.PlaneGeometry(0.8, 0.56), new THREE.MeshBasicMaterial({ color: COL.cyan, transparent: true, side: THREE.DoubleSide, toneMapped: false }));
+  scene.add(card);
+  const beam = new THREE.Line(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(), new THREE.Vector3(0, 1, 0)]), new THREE.LineBasicMaterial({ color: 0xffe0b0, transparent: true }));
+  scene.add(beam);
+  const drops = Array.from({ length: 20 }, () => { const m = new THREE.Mesh(new THREE.SphereGeometry(0.2, 20, 14), new THREE.MeshBasicMaterial({ color: 0xdff6ff, toneMapped: false })); scene.add(m); return m; });
+  const arrowMat = new THREE.LineDashedMaterial({ color: COL.cyan, dashSize: 0.35, gapSize: 0.2, transparent: true, toneMapped: false });
+  const arrows = [];
+  [0, 1].forEach(sd => [0.25, 0.5, 0.75].forEach(u => {
+    const [x0, z0] = at(u, 0.64), [x1, z1] = at(u, 0.2);
+    const l = new THREE.Line(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(sideX(sd) + x0, 0.05, z0), new THREE.Vector3(sideX(sd) + x1, 0.05, z1)]), arrowMat);
+    l.computeLineDistances(); scene.add(l); arrows.push(l);
+  }));
+  const boardDot = ([u, v]) => sharedBoard.face.localToWorld(new THREE.Vector3(((40 + (1 - v) * 380) / 600 - 0.5) * 3.0, (0.5 - (40 + u * 320) / 400) * 2.0, 0.02));
+
+  let lines = [];
+  fetch(new URL('../narration/harness-explainer.json', location.href)).then(r => r.json()).then(d => { lines = d.lines; window.__explainDuration = d.duration; });
+  const line = (sc, i) => lines.filter(x => x.chapter === sc)[i];
+  const T = (sc, i, a = 0) => { const l = line(sc, i); return l.start + (l.end - l.start) * a; };
+  const TE = (sc, i) => line(sc, i).end;
+  const shot = o => ({ ty: 0.3, blur: 1, dm: o.d * 1.25, mx: o.tx, ...o });
+  const CAM = {
+    twin: shot({ az: 0, el: 0.92, d: 40, tx: 0, tz: -1.2, blur: 0.6 }),
+    player: shot({ az: 0.42, el: 0.34, d: 10, tx: 4.4, ty: 0.5, tz: 2.4, blur: 1.5 }),
+    stand: shot({ az: 0.55, el: 0.46, d: 26, tx: 6, ty: 1.2, tz: 1, blur: 1.1 }),
+    coach: shot({ az: 0.12, el: 0.36, d: 17, tx: 2.6, ty: 1.2, tz: 5.2, blur: 1.2 }),
+    board: shot({ az: 0, el: 0.3, d: 14, tx: 0, ty: 4.2, tz: -7, blur: 1.3 }),
+    low: shot({ az: 0.12, el: 0.62, d: 34, tx: 0, tz: 0, blur: 0.9 }),
+    boards: shot({ az: 0, el: 0.5, d: 30, tx: 0, ty: 2.5, tz: -4, blur: 0.9 }),
+    wide: shot({ az: 0.3, el: 0.7, d: 48, tx: 0, tz: 0, blur: 0.5 }),
+  };
+  const toward = (a, b, k) => { const o = {}; const e = ease(clamp(k)); for (const key in a) o[key] = lerp(a[key], b[key], e); return o; };
+  const lerpG = (a, b, k) => lerp(a, b, clamp(k));
+  let st = {};
+
+  beforeRender = () => {
+    // 3D側の差し替え：描く直前に当てる
+    if (!st.boardOn) { sharedBoard.face.visible = false; ownBoard.forEach(b => { b.face.visible = false; }); }
+    links.forEach(l => { l.visible = st.linksOn; });
+    teams.forEach(tm => tm.forEach(pl => { pl.visible = !st.hideTeams; }));
+    coach.group.visible = st.coach != null;
+    if (st.coach) { coach.group.position.set(...st.coach.pos); coach.group.rotation.y = st.coach.ry; coach.right.rotation.z = st.coach.arm; }
+    card.visible = beam.visible = st.card != null;
+    if (st.card) {
+      card.position.copy(st.card.pos); card.lookAt(camera.position); card.material.opacity = st.card.a;
+      const q = beam.geometry.attributes.position; q.setXYZ(0, ...st.card.from.toArray()); q.setXYZ(1, ...st.card.pos.toArray()); q.needsUpdate = true;
+      beam.material.opacity = 0.7 * st.card.a;
+    }
+    drops.forEach((m, i) => { m.visible = !!st.drops; if (st.drops) m.position.copy(st.drops[i]); });
+    arrowMat.opacity = st.arrows || 0; arrows.forEach(l => { l.visible = (st.arrows || 0) > 0.01; });
+  };
+
+  window.__explain = t => {
+    if (!lines.length) return false;
+    clock = t; frameDt = 1 / 30; intro = 1;
+    const starts = [0, 1, 2, 3, 4, 5, 6].map(sc => (sc === 0 ? 0 : T(sc, 0) - 0.45));
+    const sc = Math.max(0, starts.filter(x => t >= x).length - 1);
+    const lab = {};   // chip -> [pos, text, alpha]
+    st = { boardOn: true, linksOn: false, hideTeams: false, coach: null, card: null, drops: null, arrows: 0 };
+    let g, cam = CAM.twin;
+    if (sc === 0) {
+      g = lerpG(p(2, 5, 0), p(2, 5, 0.95), ramp(t, 0.3, TE(0, 0)));
+      st.boardOn = false;
+      const sa = ramp(t, T(0, 0, 0.72), T(0, 0, 0.86));
+      lab.scoreL = [[sideX(0), 0.1, -PL / 2 - 0.9], 'ゲーム制作　<b>1-0</b>', sa];
+      lab.scoreR = [[sideX(1), 0.1, -PL / 2 - 0.9], 'アプリ開発　<b>0-1</b>', sa];
+    } else if (sc === 1) {
+      g = p(1, 4, 0.5);
+      st.boardOn = t >= T(1, 4, 0.35);
+      const pl = teams[1][9].position;
+      cam = t < T(1, 2) ? CAM.player : t < T(1, 4) ? toward(CAM.player, CAM.stand, ramp(t, T(1, 2), T(1, 2, 0.4))) : toward(CAM.stand, CAM.coach, ramp(t, T(1, 4), T(1, 4, 0.4)));
+      lab.player = [[pl.x, pl.y + 0.75, pl.z], '選手＝AIのモデル', ramp(t, T(1, 0, 0.1), T(1, 0, 0.3)) * (1 - ramp(t, T(1, 2, 0.6), T(1, 2, 0.8)))];
+      lab.bubble = [[pl.x, pl.y + 1.35, pl.z], '「このファイルを読みたい」', ramp(t, T(1, 1, 0.1), T(1, 1, 0.3)) * (1 - ramp(t, T(1, 3), T(1, 3, 0.2)))];
+      if (t >= T(1, 2) && t < T(1, 4)) {
+        const lamp = new THREE.Vector3(); lamps[0].getWorldPosition(lamp);
+        const k = ease(ramp(t, T(1, 2, 0.1), T(1, 2, 0.75)));
+        st.card = { from: lamp, pos: lamp.clone().lerp(new THREE.Vector3(pl.x, pl.y + 1.0, pl.z), k), a: ramp(t, T(1, 2), T(1, 2, 0.1)) * (1 - ramp(t, T(1, 3, 0.8), T(1, 4))) };
+      }
+      lab.stadium = [[SW / 2 + D * 0.6, standTop() + 1.2, 0], 'クラブとスタジアム＝ハーネス', ramp(t, T(1, 2, 0.2), T(1, 2, 0.4)) * (1 - ramp(t, T(1, 4), T(1, 4, 0.2)))];
+      lab.code = [[SW / 2 + D * 0.6, standTop() + 0.4, 0], '公式のハーネス＝Claude Code（Anthropicが作り、更新する）', ramp(t, T(1, 3, 0.1), T(1, 3, 0.3)) * (1 - ramp(t, T(1, 4), T(1, 4, 0.2)))];
+      if (t >= T(1, 4) - 0.2) {
+        const k = ease(ramp(t, T(1, 4), T(1, 4, 0.55)));
+        st.coach = { pos: [lerp(13, 3.0, k), 0, PL / 2 + 1.4], ry: lerp(-Math.PI / 2, -0.3, k), arm: k > 0.9 ? 1.2 : 0.25 };
+        const c0 = st.coach.pos;
+        lab.coach = [[c0[0], 2.3, c0[2]], '監督', ramp(t, T(1, 4, 0.2), T(1, 4, 0.35))];
+        lab.board = [boardTop(), '作戦ボード＝監督が書く設定', ramp(t, T(1, 4, 0.5), T(1, 4, 0.7))];
+      }
+    } else if (sc === 2) {
+      cam = t < T(2, 3) ? CAM.board : toward(CAM.board, CAM.twin, ramp(t, T(2, 3), T(2, 3, 0.35)));
+      if (t < T(2, 1)) g = lerpG(p(2, 1, 0), p(3, 0, 0.95), ramp(t, T(2, 0), TE(2, 0)));
+      else if (t < T(2, 2)) g = p(3, 1, 0.5);
+      else if (t < T(2, 3)) g = lerpG(p(3, 2, 0), p(3, 2, 0.75), ramp(t, T(2, 2), TE(2, 2)));
+      else g = lerpG(p(3, 3, 0), p(3, 3, 0.9), ramp(t, T(2, 3, 0.35), TE(2, 3)));
+      lab.max = [boardFoot(), '最大公倍数', ramp(t, T(2, 1), T(2, 1, 0.2)) * (1 - ramp(t, T(2, 3), T(2, 3, 0.2)))];
+      lab.front8 = [boardTop(), '8-1-1（前に8人）', ramp(t, T(2, 2, 0.4), T(2, 2, 0.6)) * (1 - ramp(t, T(2, 3, 0.4), T(2, 3, 0.6)))];
+      // ボードの点が、そのままピッチへ落ちて選手になる
+      const fall = ramp(t, T(2, 3, 0.02), T(2, 3, 0.36));
+      if (fall > 0 && fall < 1) {
+        st.hideTeams = true;
+        st.drops = [];
+        for (let sd = 0; sd < 2; sd++) for (let i = 0; i < 10; i++) {
+          const from = boardDot(F811[i]), to = teams[sd][i].position.clone();
+          st.drops.push(from.lerp(to, ease(fall)).setY(lerp(from.y, to.y, ease(fall)) + Math.sin(Math.PI * fall) * 1.5));
+        }
+      }
+    } else if (sc === 3) {
+      cam = CAM.low;
+      st.linksOn = true;
+      const back = ramp(t, starts[3], starts[3] + 1.4);
+      if (back < 1) g = lerpG(p(3, 3, 0.9), p(2, 1, 0.2), ease(back));
+      else if (t < T(3, 1)) g = p(2, 1, 0.2);
+      else if (t < T(3, 2)) g = lerpG(p(2, 1, 0.3), p(2, 2, 0.2), ramp(t, T(3, 1), TE(3, 1)));
+      else g = lerpG(p(2, 4, 0.2), p(2, 4, 0.9), ramp(t, T(3, 2), TE(3, 2)));
+      st.arrows = ramp(t, T(3, 0, 0.2), T(3, 0, 0.6));
+      lab.check = [boardFoot(), '＋確認 → 止まる', ramp(t, T(3, 1), T(3, 1, 0.2)) * (1 - ramp(t, T(3, 2), T(3, 2, 0.15)))];
+      lab.go = [boardFoot(), '＋止まるな → 走る', ramp(t, T(3, 2), T(3, 2, 0.2))];
+    } else if (sc === 4) {
+      cam = t < T(4, 1) ? toward(CAM.low, CAM.boards, ramp(t, starts[4], T(4, 0, 0.5))) : toward(CAM.boards, CAM.twin, ramp(t, T(4, 1), T(4, 1, 0.4)));
+      st.linksOn = true;
+      g = lerpG(p(4, 0, 0), p(4, 2, 0.95), ramp(t, starts[4], TE(4, 2)));
+      lab.app = [[sideX(1), 0.1, PL / 2 + 0.8], 'アプリ開発：5-4-1（守る）', ramp(t, T(4, 1), T(4, 1, 0.2))];
+      lab.game = [[sideX(0), 0.1, PL / 2 + 0.8], 'ゲーム制作：4-3-3（攻める）', ramp(t, T(4, 2), T(4, 2, 0.2))];
+    } else if (sc === 5) {
+      cam = t < T(5, 1) ? CAM.twin : toward(CAM.twin, CAM.wide, ramp(t, T(5, 1), TE(5, 1)));
+      st.linksOn = true;
+      g = t < T(5, 1) ? lerpG(p(4, 3, 0), p(4, 3, 0.9), ramp(t, starts[5], TE(5, 0))) : p(4, 3, 0.95);
+      const sa = ramp(t, T(5, 0, 0.6), T(5, 0, 0.75));
+      lab.scoreL = [[sideX(0), 0.1, -PL / 2 - 0.9], 'ゲーム制作　<b>1-0</b>　得点', sa];
+      lab.scoreR = [[sideX(1), 0.1, -PL / 2 - 0.9], 'アプリ開発　<b>0-0</b>　守れた', sa];
+    } else {
+      cam = t < T(6, 1) ? CAM.twin : t < T(6, 2) ? toward(CAM.twin, CAM.wide, ramp(t, T(6, 1), T(6, 1, 0.5))) : toward(CAM.wide, CAM.boards, ramp(t, T(6, 2), T(6, 2, 0.5)));
+      st.linksOn = true;
+      if (t < T(6, 1)) g = lerpG(p(7, 0, 0), p(7, 0, 0.95), ramp(t, starts[6], TE(6, 0)));
+      else if (t < T(6, 2)) g = lerpG(p(7, 1, 0), p(7, 1, 0.95), ramp(t, T(6, 1), TE(6, 1)));
+      else g = p(7, 2, 0.5);
+      lab.update = [[0, standTop() + 1.6, -FL / 2 - D], '更新 v2.1.283', ramp(t, T(6, 1, 0.2), T(6, 1, 0.4)) * (1 - ramp(t, T(6, 2), T(6, 2, 0.2)))];
+      if (t >= T(6, 2) - 0.3) {
+        st.coach = { pos: [0, 0, -PL / 2 - 0.4], ry: Math.PI, arm: 2.3 + Math.sin(t * 7) * 0.25 };
+        lab.coach = [[0, 2.3, -PL / 2 - 0.4], '監督：毎日ボードを書き直す', ramp(t, T(6, 2, 0.2), T(6, 2, 0.4))];
+      }
+    }
+    gOverride = g; camOverride = cam;
+    update();
+    // 画面の文字（3Dの位置に合わせる）
+    for (const k in CH) {
+      const el = CH[k], v = lab[k];
+      if (!v || v[2] <= 0.01) { el.style.opacity = '0'; continue; }
+      el.innerHTML = v[1]; v3.set(...v[0]).project(camera);
+      el.style.opacity = String(v[2]);
+      el.style.transform = `translate(${((v3.x * 0.5 + 0.5) * W).toFixed(1)}px,${((-v3.y * 0.5 + 0.5) * H).toFixed(1)}px) translate(-50%,-50%)`;
+    }
+    // 「？」、カレンダー、字幕、エンドカード
+    $('.ex-q').style.opacity = String(sc === 0 ? ramp(t, T(0, 1), T(0, 1, 0.3)) * (1 - ramp(t, TE(0, 1), TE(0, 1) + 0.3)) : 0);
+    const calOn = sc === 6 ? ramp(t, starts[6], starts[6] + 0.5) * (1 - ramp(t, T(6, 1), T(6, 1, 0.2))) : 0;
+    $('.ex-cal').style.opacity = String(calOn);
+    [...$('.ex-cal').children].forEach((d, i) => d.classList.toggle('on', sc === 6 && t >= T(6, 0, 0.12 + 0.3 * i)));
+    const cur = lines.filter(l => t >= l.start - 0.05).pop();
+    const capOn = cur && t <= cur.end + 0.35;
+    $('.ex-cap').textContent = capOn ? cur.text : '';
+    $('.ex-cap').style.opacity = capOn ? '1' : '0';
+    const endAt = TE(6, 2) + 0.5;
+    $('.ex-dip').style.opacity = String(0.86 * ramp(t, endAt, endAt + 0.6));
+    $('.ex-end').style.opacity = String(ease(ramp(t, endAt + 0.2, endAt + 0.9)));
+    return true;
+  };
+  window.__ready = false;
+  const waitEx = () => (narration && lines.length ? (measure(), window.__ready = true) : setTimeout(waitEx, 100));
+  waitEx();
 }

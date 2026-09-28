@@ -132,50 +132,55 @@ def boom(sec=2.0):
             + noise(sec) * np.exp(-t * 6) * 0.08)
 
 
-# ---- arrangement ----
-CUTS = [2, 6, 8, 12, 14, 18, 20, 24, 26, 28]
-put(crowd_bed(DUR), 0, 0.10)
-put(whistle(0.55), 0.35, 0.9)
-put(boom(1.6), 1.9, 0.5)
+def main():
+    # ---- arrangement ----
+    CUTS = [2, 6, 8, 12, 14, 18, 20, 24, 26, 28]
+    put(crowd_bed(DUR), 0, 0.10)
+    put(whistle(0.55), 0.35, 0.9)
+    put(boom(1.6), 1.9, 0.5)
 
-roots = [220.0, 174.61, 261.63, 196.0]   # Am  F  C  G  (one bar each)
-chords = [[220, 261.63, 329.63], [174.61, 220, 261.63], [196, 261.63, 329.63], [196, 246.94, 293.66]]
-beat = 2.0
-while beat < 28.0:
-    bar = int((beat - 2) // 2) % 4
-    if (beat - 2) % 2 < 1e-6:
-        put(pad(chords[bar], 2.0), beat, 0.18)
-    put(kick(), beat, 0.85)
-    if int(round((beat - 2) / BEAT)) % 2 == 1:
-        put(clap(), beat, 0.7, pan=0.15)
-    put(hat(), beat + BEAT / 2, 0.8, pan=-0.3)
-    put(note(roots[bar] / 2, 0.45), beat, 0.22)
-    beat += BEAT
+    roots = [220.0, 174.61, 261.63, 196.0]   # Am  F  C  G  (one bar each)
+    chords = [[220, 261.63, 329.63], [174.61, 220, 261.63], [196, 261.63, 329.63], [196, 246.94, 293.66]]
+    beat = 2.0
+    while beat < 28.0:
+        bar = int((beat - 2) // 2) % 4
+        if (beat - 2) % 2 < 1e-6:
+            put(pad(chords[bar], 2.0), beat, 0.18)
+        put(kick(), beat, 0.85)
+        if int(round((beat - 2) / BEAT)) % 2 == 1:
+            put(clap(), beat, 0.7, pan=0.15)
+        put(hat(), beat + BEAT / 2, 0.8, pan=-0.3)
+        put(note(roots[bar] / 2, 0.45), beat, 0.22)
+        beat += BEAT
 
-for c in CUTS:
-    put(whoosh(0.5), c - 0.35, 1.0)
-for at in (2.3, 6.2, 6.45, 8.2, 12.2, 12.45, 14.2, 18.2, 18.45, 20.2, 24.2, 24.45, 26.2, 26.45):
-    put(tick(), at, 1.0)
+    for c in CUTS:
+        put(whoosh(0.5), c - 0.35, 1.0)
+    for at in (2.3, 6.2, 6.45, 8.2, 12.2, 12.45, 14.2, 18.2, 18.45, 20.2, 24.2, 24.45, 26.2, 26.45):
+        put(tick(), at, 1.0)
 
-# the plays, placed where the pictures land them
-put(ball(), 9.0, 0.9, pan=-0.3)
-put(cheer(1.9), 10.4, 0.8, pan=-0.4)      # ゲーム制作：得点
-put(groan(1.5), 11.0, 0.7, pan=0.4)       # アプリ開発：失点
-put(whistle(0.25), 15.6, 0.6)
-put(ball(), 18.4, 0.9)
-put(groan(1.6), 19.0, 0.9)                # 8-1-1：両方失点
-put(cheer(2.2), 22.0, 0.85)               # ボードを分けると勝てる
-put(boom(2.0), 28.0, 0.8)
-put(whistle(0.9), 28.25, 0.9)             # 試合終了
-put(cheer(2.0), 28.4, 0.55)
+    # the plays, placed where the pictures land them
+    put(ball(), 9.0, 0.9, pan=-0.3)
+    put(cheer(1.9), 10.4, 0.8, pan=-0.4)      # ゲーム制作：得点
+    put(groan(1.5), 11.0, 0.7, pan=0.4)       # アプリ開発：失点
+    put(whistle(0.25), 15.6, 0.6)
+    put(ball(), 18.4, 0.9)
+    put(groan(1.6), 19.0, 0.9)                # 8-1-1：両方失点
+    put(cheer(2.2), 22.0, 0.85)               # ボードを分けると勝てる
+    put(boom(2.0), 28.0, 0.8)
+    put(whistle(0.9), 28.25, 0.9)             # 試合終了
+    put(cheer(2.0), 28.4, 0.55)
 
-# fade out, normalise
-fade = np.minimum(1, (DUR - np.arange(N) / SR) / 0.8)
-mix *= fade[:, None]
-mix /= np.max(np.abs(mix)) + 1e-9
-mix *= 0.89
-out = (mix * 32767).astype(np.int16)
-with wave.open(sys.argv[1], "wb") as w:
-    w.setnchannels(2); w.setsampwidth(2); w.setframerate(SR)
-    w.writeframes(out.tobytes())
-print("wrote", sys.argv[1], f"{DUR:.1f}s")
+    # fade out, normalise
+    fade = np.minimum(1, (DUR - np.arange(N) / SR) / 0.8)
+    mix *= fade[:, None]
+    mix /= np.max(np.abs(mix)) + 1e-9
+    mix *= 0.89
+    out = (mix * 32767).astype(np.int16)
+    with wave.open(sys.argv[1], "wb") as w:
+        w.setnchannels(2); w.setsampwidth(2); w.setframerate(SR)
+        w.writeframes(out.tobytes())
+    print("wrote", sys.argv[1], f"{DUR:.1f}s")
+
+
+if __name__ == "__main__":
+    main()
