@@ -4,7 +4,7 @@
  "speakerId": 101,
  "credit": "VOICEVOX:離途",
  "audio": "./narration/harness-explainer.m4a",
- "duration": 91.6,
+ "duration": 124.8,
  "lines": [
   {
    "chapter": 0,
@@ -181,6 +181,54 @@
    "focus": null,
    "start": 87.552,
    "end": 91.179
+  },
+  {
+   "chapter": 7,
+   "text": "サッカーを、AIの言葉に戻してみます。",
+   "beat": null,
+   "focus": null,
+   "start": 92.129,
+   "end": 95.457
+  },
+  {
+   "chapter": 7,
+   "text": "試合の相手は、インプット。選手は、モデル。",
+   "beat": null,
+   "focus": null,
+   "start": 95.877,
+   "end": 100.687
+  },
+  {
+   "chapter": 7,
+   "text": "クラブとスタジアムは、ハーネス。モデルの答えを受けて、実際に読み、書き、実行します。",
+   "beat": null,
+   "focus": null,
+   "start": 101.107,
+   "end": 109.79
+  },
+  {
+   "chapter": 7,
+   "text": "作戦ボードの中身は、コンテキストとして、毎回モデルに見せられます。",
+   "beat": null,
+   "focus": null,
+   "start": 110.21,
+   "end": 115.682
+  },
+  {
+   "chapter": 7,
+   "text": "試合の結果が、アウトプット。",
+   "beat": null,
+   "focus": null,
+   "start": 116.102,
+   "end": 119.025
+  },
+  {
+   "chapter": 7,
+   "text": "同じモデルでも、渡すコンテキストで、アウトプットが変わる。",
+   "beat": null,
+   "focus": null,
+   "start": 119.445,
+   "end": 124.319
   }
  ]
 }
