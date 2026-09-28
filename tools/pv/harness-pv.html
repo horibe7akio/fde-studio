@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="ja"><head><meta charset="utf-8"><title>ハーネス PV</title>
+<style>
+  html,body{margin:0;background:#02040a;overflow:hidden}
+  #stage{position:relative;width:1920px;height:1080px;overflow:hidden;font-family:'Noto Sans JP','Hiragino Sans',sans-serif;
+    background:radial-gradient(ellipse at 60% 40%,#0c2130 0,#040811 55%,#02040a 100%)}
+  #stage::before{content:'';position:absolute;inset:0;background-image:linear-gradient(#96e5ff0b 1px,transparent 1px),linear-gradient(90deg,#96e5ff0b 1px,transparent 1px);background-size:80px 80px}
+  .space{position:absolute;inset:0;perspective:2400px}
+  .browser{position:absolute;left:50%;top:50%;width:1280px;height:756px;margin:-378px 0 0 -640px;border-radius:14px;overflow:hidden;
+    background:#0b1220;box-shadow:0 60px 140px #000c,0 0 0 1px #96e5ff33;transform-style:preserve-3d}
+  .bar{height:36px;display:flex;align-items:center;gap:8px;padding:0 14px;background:#111a2b;border-bottom:1px solid #96e5ff22}
+  .bar i{width:11px;height:11px;border-radius:50%;background:#2c3a52}
+  .bar span{margin-left:18px;font:13px/1 'Space Grotesk',sans-serif;color:#8fa3bf;background:#0a1220;padding:6px 16px;border-radius:999px;letter-spacing:.04em}
+  .viewport{position:relative;width:1280px;height:720px;overflow:hidden}
+  .viewport iframe{width:1920px;height:1080px;border:0;transform:scale(.6667);transform-origin:0 0}
+  #full{position:absolute;inset:0;width:1920px;height:1080px;border:0;opacity:0}
+  .type{position:absolute;left:150px;bottom:170px;z-index:5}
+  .type.center{left:0;right:0;bottom:auto;top:50%;transform:translateY(-50%);text-align:center}
+  .line{overflow:hidden;padding:.06em 0}
+  .line span{display:inline-block;white-space:nowrap;font-weight:900;font-size:92px;line-height:1.2;color:#e7edf6;letter-spacing:-.01em;text-shadow:0 6px 40px #000d}
+  .line.s span{font-size:64px}
+  .line em{font-style:normal;color:#96e5ff}
+  .line b{color:#ff7a7a}
+  .telop{position:absolute;left:70px;top:64px;z-index:6;display:flex;align-items:stretch;font:700 26px/1 'Space Grotesk','Noto Sans JP',sans-serif;opacity:0}
+  .telop .k{background:#96e5ff;color:#051018;padding:14px 18px;letter-spacing:.08em}
+  .telop .v{background:#060c16e8;color:#e7edf6;padding:14px 22px;border:1px solid #96e5ff55;border-left:0}
+  .telop .v b{color:#ffd84a}
+  .slash{position:absolute;left:150px;height:10px;width:340px;background:#96e5ff;z-index:5;transform-origin:0 50%}
+  #flash{position:absolute;inset:0;background:#fff;opacity:0;z-index:9}
+  #dip{position:absolute;inset:0;background:#02040a;opacity:0;z-index:8}
+  .end{position:absolute;inset:0;z-index:10;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;opacity:0}
+  .end p{margin:0;font:600 26px/1 'Space Grotesk',sans-serif;letter-spacing:.34em;color:#96e5ff}
+  .end h1{margin:0;font-size:150px;font-weight:900;color:#e7edf6;letter-spacing:.04em}
+  .end span{font-size:30px;color:#95a5bc;letter-spacing:.14em}
+  .end .pitch{width:420px;height:4px;background:linear-gradient(90deg,transparent,#96e5ff,transparent)}
+</style></head>
+<body>
+<div id="stage">
+  <div class="space"><div class="browser" id="browser"><div class="bar"><i></i><i></i><i></i><span>3Dでわかる / ハーネス</span></div>
+    <div class="viewport"><iframe id="site" src="/harness/?drive"></iframe></div></div></div>
+  <iframe id="full" src="/harness/?motion&clean"></iframe>
+  <div class="slash" id="slash"></div>
+  <div class="type" id="type"></div>
+  <div class="telop" id="telop"><div class="k"></div><div class="v"></div></div>
+  <div id="dip"></div><div id="flash"></div>
+  <div class="end" id="end"><p>3Dでわかる</p><h1>ハーネス</h1><div class="pitch"></div><span>サッカーで見る、AIの作戦ボード</span></div>
+</div>
+<script>
+const $ = s => document.querySelector(s);
+const clamp = (x, a = 0, b = 1) => Math.max(a, Math.min(b, x));
+const ramp = (x, a, b) => clamp((x - a) / (b - a));
+const ease = k => (k < .5 ? 4 * k * k * k : 1 - Math.pow(-2 * k + 2, 3) / 2);
+const lerp = (a, b, k) => a + (b - a) * k;
+const site = () => $('#site').contentWindow, full = () => $('#full').contentWindow;
+
+// 120BPM：1拍0.5秒、1小節2秒。カットはすべて拍の頭
+// kind: type＝文字だけ／browser＝資料をブラウザで見せる／full＝3Dいっぱい
+const SHOTS = () => {
+  const p = site().__p;
+  return [
+    { a: 0, b: 2, kind: 'type', center: true, lines: ['ハーネスを、', '<em>サッカー</em>で説明する。'] },
+    { a: 2, b: 6, kind: 'browser', g: [0.12, p(1, 2, 0.5)], from: { ry: -34, rx: 12, z: -900, s: .8 }, to: { ry: -14, rx: 6, z: 0, s: 1 },
+      telop: ['3Dでわかる', 'ハーネス ─ <b>なぜ毎日組み直すのか</b>'] },
+    { a: 6, b: 8, kind: 'type', lines: ['作戦ボードは、<em>1枚</em>。', '試合は、<em>2つ</em>。'] },
+    { a: 8, b: 12, kind: 'full', g: [p(2, 4, 0.1), p(2, 5, 0.95)], telop: ['＋止まるな', 'ゲーム制作 <b>1-0</b> ／ アプリ開発 <b>0-1</b>'] },
+    { a: 12, b: 14, kind: 'type', lines: ['同じルールが、', '<em>助け</em>にも、<b>足かせ</b>にも。'] },
+    { a: 14, b: 18, kind: 'browser', g: [p(3, 0, 0), p(3, 2, 0.9)], from: { ry: 20, rx: 8, z: -300, s: .92 }, to: { ry: 12, rx: 4, z: 0, s: 1.02 },
+      telop: ['FORMATION', '4-4-2 → <b>8-1-1</b>'] },
+    { a: 18, b: 20, kind: 'full', g: [p(3, 3, 0.1), p(3, 3, 0.95)], lines: ['<b>8-1-1</b>', '気づけば、<em>最大公倍数</em>。'], small: true },
+    { a: 20, b: 24, kind: 'browser', g: [p(4, 0, 0), p(4, 3, 0.9)], from: { ry: -10, rx: 6, z: 0, s: 1 }, to: { ry: -4, rx: 2, z: 260, s: 1.18 },
+      telop: ['この試合の最適', 'ゲーム制作 <b>4-3-3</b> ／ アプリ開発 <b>5-4-1</b>'] },
+    { a: 24, b: 26, kind: 'type', center: true, lines: ['とある案件（試合）で最適なハーネスは、', '他の試合で<em>最適とはかぎらない</em>。'], small: true },
+    { a: 26, b: 28, kind: 'full', g: [p(7, 3, 0.1), p(7, 3, 0.9)], lines: ['だから、', '<em>毎日組み直す</em>。'] },
+    { a: 28, b: 30.1, kind: 'end' },
+  ];
+};
+
+let current = -1;
+window.__pv = t => {
+  const shots = SHOTS();
+  const i = shots.findIndex(s => t >= s.a && t < s.b), s = shots[i];
+  const k = clamp((t - s.a) / (s.b - s.a)), cut = i !== current;
+  if (cut) {
+    current = i;
+    const lines = s.lines || [];
+    $('#type').className = 'type' + (s.center ? ' center' : '');
+    $('#type').innerHTML = lines.map(l => `<div class="line${s.small ? ' s' : ''}"><span>${l}</span></div>`).join('');
+    const tel = $('#telop');
+    if (s.telop) { tel.querySelector('.k').innerHTML = s.telop[0]; tel.querySelector('.v').innerHTML = s.telop[1]; }
+  }
+  // 画
+  const browser = $('#browser');
+  $('.space').style.opacity = s.kind === 'browser' ? 1 : 0;
+  $('#full').style.opacity = s.kind === 'full' ? 1 : 0;
+  if (s.kind === 'browser') {
+    const e = ease(k), f = s.from, to = s.to;
+    browser.style.transform = `translateZ(${lerp(f.z, to.z, e)}px) rotateY(${lerp(f.ry, to.ry, e)}deg) rotateX(${lerp(f.rx, to.rx, e)}deg) scale(${lerp(f.s, to.s, e)})`;
+    site().__drive(lerp(s.g[0], s.g[1], k), t, cut);
+  } else if (s.kind === 'full') {
+    full().__shot(lerp(s.g[0], s.g[1], k), t, cut);
+  }
+  // 文字：1行ずつ下からせり上がる
+  [...$('#type').children].forEach((el, j) => {
+    const inK = ease(ramp(t, s.a + .12 + j * .22, s.a + .5 + j * .22)), outK = ramp(t, s.b - .25, s.b - .05);
+    el.firstChild.style.transform = `translateY(${(1 - inK) * 110}%)`;
+    el.style.opacity = String(1 - outK);
+  });
+  const slashOn = s.lines && !s.center && s.kind !== 'end';
+  $('#slash').style.bottom = '150px';
+  $('#slash').style.opacity = slashOn ? 1 - ramp(t, s.b - .25, s.b - .05) : 0;
+  $('#slash').style.transform = `scaleX(${slashOn ? ease(ramp(t, s.a, s.a + .35)) : 0})`;
+  const tel = $('#telop');
+  tel.style.opacity = s.telop ? String(ease(ramp(t, s.a + .2, s.a + .45)) * (1 - ramp(t, s.b - .25, s.b - .05))) : '0';
+  tel.style.transform = `translateX(${(1 - ease(ramp(t, s.a + .2, s.a + .45))) * -40}px)`;
+  // カットの白い閃光と、最後の暗転
+  const flash = Math.max(0, ...shots.slice(1).map(x => 1 - clamp(Math.abs(t - x.a) / .06)));
+  $('#flash').style.opacity = String(flash * .55);
+  $('#dip').style.opacity = String(s.kind === 'type' ? .35 : 0);
+  $('#end').style.opacity = String(s.kind === 'end' ? ease(ramp(t, s.a + .1, s.a + .6)) : 0);
+  $('#end').style.transform = `scale(${s.kind === 'end' ? lerp(1.06, 1, ease(ramp(t, s.a, s.a + .8))) : 1})`;
+  return true;
+};
+window.__pvReady = () => site()?.__ready === true && full()?.__ready === true;
+</script>
+</body></html>

@@ -23,7 +23,10 @@ const bar = document.getElementById('bar');
 const stageEl = document.querySelector('.stage');
 const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
 // ?motion：PR動画の書き出し用。時刻を外から1コマずつ進め、文字の演出を重ねる
-const MOTION = new URLSearchParams(location.search).has('motion');
+const PARAMS = new URLSearchParams(location.search);
+const MOTION = PARAMS.has('motion');
+// ?drive：通常の画面のまま、スクロールと時刻を外から1コマずつ進める（PV用）。?clean：動画用の文字を重ねない
+const DRIVE = PARAMS.has('drive'), CLEAN = PARAMS.has('clean');
 if (MOTION) document.documentElement.classList.add('motion');
 let gOverride = null;
 
@@ -729,10 +732,21 @@ function loop(now) {
 window.addEventListener('resize', () => { measure(); snap = true; });
 if (document.fonts && document.fonts.ready) document.fonts.ready.then(measure);
 measure(); update();
-if (!MOTION) { requestAnimationFrame(loop); if (!reduced) requestAnimationFrame(introTick); }
+if (!MOTION && !DRIVE) { requestAnimationFrame(loop); if (!reduced) requestAnimationFrame(introTick); }
+if (MOTION || DRIVE) {
+  const yFor = g => { const c = clamp(Math.floor(g), 0, CHAPTERS - 1); return Math.max(0, tops[c] + (g - c) * hs[c] - probe()); };
+  // g の位置を3Dだけで描く
+  window.__shot = (g, t, cut = false) => { gOverride = g; intro = 1; clock = t; frameDt = 1 / 30; if (cut) snap = true; update(); };
+  // 実際にその位置までスクロールした画面で描く
+  window.__drive = (g, t, cut = false) => { gOverride = null; window.scrollTo({ top: yFor(g), behavior: 'instant' }); intro = 1; clock = t; frameDt = 1 / 30; if (cut) snap = true; update(); };
+  window.__p = (c, i, a = 0) => p(c, i, a);
+  window.__ready = false;
+  const waitReady = () => (narration ? (measure(), window.__ready = true) : setTimeout(waitReady, 100));
+  waitReady();
+}
 
 // ---------- PR動画（?motion） ----------
-if (MOTION) {
+if (MOTION && !CLEAN) {
   const mg = document.createElement('div'); mg.id = 'mg';
   mg.innerHTML = '<div class="mg-type"></div><div class="mg-dip"></div><div class="mg-end"><p>3Dでわかる</p><h1>ハーネス</h1><span>なぜ毎日組み直すのか</span></div>';
   document.body.append(mg);
@@ -776,7 +790,4 @@ if (MOTION) {
     end.style.transform = `translateY(${(1 - ease(ramp(t, 27.3, 28.1))) * 16}px)`;
     return true;
   };
-  window.__ready = false;
-  const wait = () => (narration ? (window.__ready = true) : setTimeout(wait, 100));
-  wait();
 }
